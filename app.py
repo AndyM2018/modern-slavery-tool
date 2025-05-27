@@ -23,6 +23,16 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
 NEWS_API_KEY = os.getenv("NEWS_API_KEY", "")
 
+# ADD THIS DEBUG ROUTE HERE:
+@app.route('/debug-env', methods=['GET'])
+def debug_env():
+    return jsonify({
+        'openai_present': 'OPENAI_API_KEY' in os.environ,
+        'openai_length': len(os.environ.get('OPENAI_API_KEY', '')),
+        'openai_starts_with': os.environ.get('OPENAI_API_KEY', '')[:15] if os.environ.get('OPENAI_API_KEY') else 'NONE',
+        'openai_variable_value': OPENAI_API_KEY[:15] if OPENAI_API_KEY else 'EMPTY'
+    })
+
 # Risk Intelligence Database
 COUNTRY_RISK_INDEX = {
     "North Korea": 90, "Eritrea": 87, "Mauritania": 85, "Saudi Arabia": 82,
