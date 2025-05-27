@@ -19,6 +19,15 @@ CORS(app)
 # Configuration
 import os
 
+# DEBUG: Let's see what Railway actually provides
+print("🔧 DEBUG: All environment variables with 'API' in name:")
+for key, value in os.environ.items():
+    if 'API' in key.upper():
+        print(f"   {key}: {value[:15]}..." if value else f"   {key}: EMPTY")
+
+print(f"🔧 DEBUG: Total environment variables: {len(os.environ)}")
+print(f"🔧 DEBUG: Railway specific vars: {[k for k in os.environ.keys() if 'RAILWAY' in k.upper()]}")
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
 NEWS_API_KEY = os.getenv("NEWS_API_KEY", "")
