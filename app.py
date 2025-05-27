@@ -42,6 +42,20 @@ def debug_env():
         'openai_variable_value': OPENAI_API_KEY[:15] if OPENAI_API_KEY else 'EMPTY'
     })
 
+# ADD THE NEW DEBUG ROUTE RIGHT HERE:
+@app.route('/debug-health', methods=['GET'])
+def debug_health():
+    return jsonify({
+        'OPENAI_API_KEY_value': OPENAI_API_KEY[:15] if OPENAI_API_KEY else 'EMPTY',
+        'OPENAI_API_KEY_length': len(OPENAI_API_KEY),
+        'OPENAI_API_KEY_bool': bool(OPENAI_API_KEY),
+        'length_check': len(OPENAI_API_KEY) > 20,
+        'combined_check': bool(OPENAI_API_KEY and len(OPENAI_API_KEY) > 20),
+        'SERPER_API_KEY_bool': bool(SERPER_API_KEY),
+        'NEWS_API_KEY_bool': bool(NEWS_API_KEY),
+        'startup_would_show': "✅" if OPENAI_API_KEY and len(OPENAI_API_KEY) > 20 else "❌"
+    })
+
 # Risk Intelligence Database
 COUNTRY_RISK_INDEX = {
     "North Korea": 90, "Eritrea": 87, "Mauritania": 85, "Saudi Arabia": 82,
