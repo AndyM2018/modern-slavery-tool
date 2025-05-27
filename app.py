@@ -12,12 +12,19 @@ from datetime import datetime, timedelta
 import json
 import numpy as np
 from collections import defaultdict
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-# Configuration
-import os
+# Configuration - Read environment variables fresh each time they're needed
+def get_api_keys():
+    """Get fresh API keys from environment variables"""
+    return {
+        'openai': os.getenv("OPENAI_API_KEY", ""),
+        'serper': os.getenv("SERPER_API_KEY", ""),
+        'news': os.getenv("NEWS_API_KEY", "")
+    }
 
 # DEBUG: Let's see what Railway actually provides
 print("🔧 DEBUG: All environment variables with 'API' in name:")
@@ -26,35 +33,12 @@ for key, value in os.environ.items():
         print(f"   {key}: {value[:15]}..." if value else f"   {key}: EMPTY")
 
 print(f"🔧 DEBUG: Total environment variables: {len(os.environ)}")
-print(f"🔧 DEBUG: Railway specific vars: {[k for k in os.environ.keys() if 'RAILWAY' in k.upper()]}")
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
-NEWS_API_KEY = os.getenv("NEWS_API_KEY", "")
-
-# ADD THIS DEBUG ROUTE HERE:
-@app.route('/debug-env', methods=['GET'])
-def debug_env():
-    return jsonify({
-        'openai_present': 'OPENAI_API_KEY' in os.environ,
-        'openai_length': len(os.environ.get('OPENAI_API_KEY', '')),
-        'openai_starts_with': os.environ.get('OPENAI_API_KEY', '')[:15] if os.environ.get('OPENAI_API_KEY') else 'NONE',
-        'openai_variable_value': OPENAI_API_KEY[:15] if OPENAI_API_KEY else 'EMPTY'
-    })
-
-# ADD THE NEW DEBUG ROUTE RIGHT HERE:
-@app.route('/debug-health', methods=['GET'])
-def debug_health():
-    return jsonify({
-        'OPENAI_API_KEY_value': OPENAI_API_KEY[:15] if OPENAI_API_KEY else 'EMPTY',
-        'OPENAI_API_KEY_length': len(OPENAI_API_KEY),
-        'OPENAI_API_KEY_bool': bool(OPENAI_API_KEY),
-        'length_check': len(OPENAI_API_KEY) > 20,
-        'combined_check': bool(OPENAI_API_KEY and len(OPENAI_API_KEY) > 20),
-        'SERPER_API_KEY_bool': bool(SERPER_API_KEY),
-        'NEWS_API_KEY_bool': bool(NEWS_API_KEY),
-        'startup_would_show': "✅" if OPENAI_API_KEY and len(OPENAI_API_KEY) > 20 else "❌"
-    })
+# Test API keys at startup
+api_keys = get_api_keys()
+OPENAI_API_KEY = api_keys['openai']
+SERPER_API_KEY = api_keys['serper']
+NEWS_API_KEY = api_keys['news']
 
 # Risk Intelligence Database
 COUNTRY_RISK_INDEX = {
@@ -112,18 +96,21 @@ class EnhancedModernSlaveryAssessment:
         })
     
     def call_openai_api(self, messages, max_tokens=1500, temperature=0.1):
-        """OpenAI API call with lower temperature for consistency"""
+        """OpenAI API call with fresh API key"""
         try:
+            # Get fresh API key each time
+            current_openai_key = os.getenv("OPENAI_API_KEY", "")
+            
             url = "https://api.openai.com/v1/chat/completions"
             headers = {
-                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Authorization": f"Bearer {current_openai_key}",
                 "Content-Type": "application/json"
             }
             data = {
-                "model": "gpt-4o",  # Using more powerful model
+                "model": "gpt-4o",
                 "messages": messages,
                 "max_tokens": max_tokens,
-                "temperature": temperature  # Lower temperature = more consistent
+                "temperature": temperature
             }
             
             response = requests.post(url, headers=headers, json=data, timeout=45)
@@ -447,6 +434,9 @@ class EnhancedModernSlaveryAssessment:
     def search_news_incidents(self, company_name):
         """Search for news about labor practices"""
         try:
+            # Get fresh API key each time
+            current_news_key = os.getenv("NEWS_API_KEY", "")
+            
             queries = [
                 f"{company_name} forced labor modern slavery",
                 f"{company_name} workers rights supply chain",
@@ -460,7 +450,7 @@ class EnhancedModernSlaveryAssessment:
                     'q': query,
                     'sortBy': 'publishedAt',
                     'pageSize': 3,
-                    'apiKey': NEWS_API_KEY,
+                    'apiKey': current_news_key,
                     'language': 'en',
                     'from': (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')  # 2 years
                 }
@@ -645,6 +635,11 @@ def test_openai():
 
 @app.route('/health', methods=['GET'])
 def get_status():
+    # Get fresh API keys directly from environment
+    current_openai_key = os.getenv("OPENAI_API_KEY", "")
+    current_serper_key = os.getenv("SERPER_API_KEY", "")
+    current_news_key = os.getenv("NEWS_API_KEY", "")
+    
     return jsonify({
         'status': 'healthy',
         'message': 'Enhanced AI-Powered Modern Slavery Assessment API',
@@ -657,10 +652,42 @@ def get_status():
             'Company-specific intelligence gathering'
         ],
         'api_keys_configured': {
-            'openai': bool(OPENAI_API_KEY and len(OPENAI_API_KEY) > 20),
-            'serper': bool(SERPER_API_KEY),
-            'news_api': bool(NEWS_API_KEY)
+            'openai': bool(current_openai_key and len(current_openai_key) > 20),
+            'serper': bool(current_serper_key and len(current_serper_key) > 10),
+            'news_api': bool(current_news_key and len(current_news_key) > 10)
         }
+    })
+
+@app.route('/debug-health', methods=['GET'])
+def debug_health():
+    # Get fresh API keys directly from environment
+    current_openai_key = os.getenv("OPENAI_API_KEY", "")
+    current_serper_key = os.getenv("SERPER_API_KEY", "")
+    current_news_key = os.getenv("NEWS_API_KEY", "")
+    
+    return jsonify({
+        'OPENAI_API_KEY_value': current_openai_key[:15] if current_openai_key else 'EMPTY',
+        'OPENAI_API_KEY_length': len(current_openai_key),
+        'OPENAI_API_KEY_bool': bool(current_openai_key),
+        'length_check': len(current_openai_key) > 20,
+        'combined_check': bool(current_openai_key and len(current_openai_key) > 20),
+        'SERPER_API_KEY_bool': bool(current_serper_key),
+        'NEWS_API_KEY_bool': bool(current_news_key),
+        'startup_would_show': "✅" if current_openai_key and len(current_openai_key) > 20 else "❌",
+        'environment_check': {
+            'OPENAI_in_environ': 'OPENAI_API_KEY' in os.environ,
+            'total_environ_vars': len(os.environ),
+            'api_vars_in_environ': [k for k in os.environ.keys() if 'API' in k.upper()]
+        }
+    })
+
+@app.route('/debug-env', methods=['GET'])
+def debug_env():
+    return jsonify({
+        'openai_present': 'OPENAI_API_KEY' in os.environ,
+        'openai_length': len(os.environ.get('OPENAI_API_KEY', '')),
+        'openai_starts_with': os.environ.get('OPENAI_API_KEY', '')[:15] if os.environ.get('OPENAI_API_KEY') else 'NONE',
+        'all_api_vars': {k: v[:15] + "..." if v and len(v) > 15 else v for k, v in os.environ.items() if 'API' in k.upper()}
     })
 
 @app.route('/search/companies', methods=['GET'])
@@ -676,7 +703,15 @@ def search_companies():
 if __name__ == '__main__':
     print("🚀 Enhanced AI-Powered Modern Slavery Assessment API Starting...")
     print("📡 Backend running on: http://localhost:5000")
-    print("🔑 OpenAI API Key configured:", "✅" if OPENAI_API_KEY and len(OPENAI_API_KEY) > 20 else "❌")
+    
+    # Check API keys at startup using fresh reads
+    startup_openai_key = os.getenv("OPENAI_API_KEY", "")
+    startup_serper_key = os.getenv("SERPER_API_KEY", "")
+    startup_news_key = os.getenv("NEWS_API_KEY", "")
+    
+    print("🔑 OpenAI API Key configured:", "✅" if startup_openai_key and len(startup_openai_key) > 20 else "❌")
+    print("🔑 Serper API Key configured:", "✅" if startup_serper_key and len(startup_serper_key) > 10 else "❌")
+    print("🔑 News API Key configured:", "✅" if startup_news_key and len(startup_news_key) > 10 else "❌")
     print("🧠 Using GPT-4o for intelligent, differentiated risk assessment")
     print("🎯 Enhanced Features:")
     print("   - Comprehensive company intelligence gathering")
@@ -686,6 +721,5 @@ if __name__ == '__main__':
     print("   - Fixed risk level thresholds for better differentiation")
     print("🌐 Ready for comprehensive AI-powered assessments!")
     
-    import os
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
