@@ -1,3 +1,5 @@
+/* Complete App.css - Modern Slavery Assessment Tool with Enhanced Features */
+
 * {
   margin: 0;
   padding: 0;
@@ -26,6 +28,7 @@ body {
   flex: 1;
 }
 
+/* Header Styles */
 .header {
   text-align: center;
   margin-bottom: 40px;
@@ -49,6 +52,39 @@ body {
   margin: 0 auto;
 }
 
+/* Brand Section for Logo */
+.brand-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.company-logo {
+  height: 60px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* Makes logo white for dark background */
+}
+
+.brand-text {
+  text-align: left;
+}
+
+.brand-text h1 {
+  margin-bottom: 8px;
+  color: white;
+}
+
+.brand-text p {
+  margin: 0;
+  opacity: 0.9;
+  color: white;
+}
+
+/* Assessment Section */
 .assessment-section {
   background: white;
   border-radius: 16px;
@@ -133,6 +169,7 @@ body {
   100% { transform: rotate(360deg); }
 }
 
+/* Alert Styles */
 .alert {
   padding: 16px 20px;
   border-radius: 12px;
@@ -146,6 +183,7 @@ body {
   border: 1px solid #f5c6cb;
 }
 
+/* Results Container */
 .results-container {
   background-color: #fff;
   border-radius: 16px;
@@ -184,6 +222,7 @@ body {
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Risk Overview Cards */
 .risk-overview {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -229,9 +268,52 @@ body {
   font-weight: 400;
 }
 
-.section {
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  border-bottom: 2px solid #e9ecef;
+  background: #f8f9fa;
+  margin: 0;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 18px;
+  border: none;
+  background: none;
+  color: #6c757d;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.tab-button:hover {
+  color: #495057;
+  background-color: #f8f9fa;
+}
+
+.tab-button.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background-color: white;
+}
+
+.tab-content {
   padding: 30px;
+  min-height: 400px;
+}
+
+/* Section Styles */
+.section {
+  padding: 30px 0;
   border-top: 1px solid #e9ecef;
+}
+
+.section:first-child {
+  border-top: none;
+  padding-top: 0;
 }
 
 .section h3 {
@@ -243,9 +325,10 @@ body {
   gap: 8px;
 }
 
+/* Findings and Recommendations */
 .findings-list, .recommendations-list {
   list-style: none;
-  space-y: 10px;
+  padding: 0;
 }
 
 .finding-item, .recommendation-item {
@@ -255,7 +338,7 @@ body {
   margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 15px;
   border-left: 4px solid #667eea;
 }
@@ -263,6 +346,7 @@ body {
 .finding-text, .rec-text {
   flex: 1;
   line-height: 1.5;
+  color: #495057;
 }
 
 .severity-badge, .priority-badge {
@@ -272,6 +356,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  margin-left: 12px;
 }
 
 .severity-badge.high, .priority-badge.high {
@@ -289,27 +374,532 @@ body {
   color: white;
 }
 
-.risk-category {
-  background-color: #f8f9fa;
+/* Risk Factors Grid */
+.space-y-4 > * + * {
+  margin-top: 16px;
+}
+
+.risk-factors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.risk-factor-item {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.risk-factor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.risk-factor-title {
+  font-weight: bold;
+  color: #495057;
+  flex: 1;
+  margin-right: 10px;
+}
+
+.impact-badge {
+  font-size: 0.7em;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.impact-badge.high {
+  background: #dc3545;
+  color: white;
+}
+
+.impact-badge.medium {
+  background: #ffc107;
+  color: #212529;
+}
+
+.impact-badge.low {
+  background: #28a745;
+  color: white;
+}
+
+.risk-evidence {
+  color: #6c757d;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+/* Industry Benchmarking Styles */
+.industry-benchmarking {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #dee2e6;
+}
+
+.benchmark-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.benchmark-header h4 {
+  color: #495057;
+  margin-bottom: 16px;
+  font-size: 1.4em;
+}
+
+.score-comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.score-item {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.score-item .label {
+  display: block;
+  font-size: 0.9em;
+  color: #6c757d;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.score-item .score {
+  font-size: 1.8em;
+  font-weight: bold;
+  display: block;
+}
+
+.company-score {
+  color: #dc3545;
+}
+
+.industry-score {
+  color: #ffc107;
+}
+
+.performance-badge {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.benchmark-insights {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.benchmark-insights h5 {
+  margin-bottom: 12px;
+  color: #495057;
+}
+
+.benchmark-insights ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.benchmark-insights li {
+  margin-bottom: 8px;
+  color: #6c757d;
+}
+
+.benchmark-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.benchmark-section {
+  background: white;
   padding: 20px;
   border-radius: 10px;
-  margin-bottom: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.risk-category h4 {
+.benchmark-section h5 {
+  margin-bottom: 16px;
   color: #495057;
-  margin-bottom: 12px;
-  font-size: 1.1rem;
+  font-size: 1.1em;
 }
 
-.risk-factor {
-  background-color: white;
-  padding: 12px 16px;
-  border-radius: 8px;
+.peer-companies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.peer-company {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.industry-risks, .best-practices {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.industry-risks li, .best-practices li {
   margin-bottom: 8px;
-  border-left: 3px solid #dc3545;
+  color: #6c757d;
+  line-height: 1.4;
 }
 
+.regulatory-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.regulatory-item {
+  background: #fff3cd;
+  color: #856404;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9em;
+  border-left: 3px solid #ffc107;
+}
+
+.benchmark-metadata {
+  background: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border-left: 4px solid #28a745;
+  margin-top: 16px;
+}
+
+/* Manufacturing Map Styles */
+.manufacturing-map {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #dee2e6;
+}
+
+.map-summary {
+  margin-bottom: 20px;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+}
+
+.stat-item.high-risk {
+  border-left: 4px solid #dc3545;
+}
+
+.stat-item.medium-risk {
+  border-left: 4px solid #ffc107;
+}
+
+.stat-item.low-risk {
+  border-left: 4px solid #28a745;
+}
+
+.stat-item.total {
+  border-left: 4px solid #007bff;
+}
+
+.stat-number {
+  display: block;
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #495057;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.9em;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+.map-container {
+  margin: 20px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.location-popup h4 {
+  margin: 0 0 8px 0;
+  color: #495057;
+}
+
+.location-popup p {
+  margin: 4px 0;
+  font-size: 0.9em;
+}
+
+.risk-badge {
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.map-legend {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.map-legend h5 {
+  margin-bottom: 12px;
+  color: #495057;
+}
+
+.legend-items {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.selected-location-details {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+  border-left: 4px solid #007bff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.selected-location-details h5 {
+  margin-bottom: 12px;
+  color: #495057;
+}
+
+.location-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.location-details-grid > div {
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* Enhanced Data Styles */
+.enhanced-data {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #dee2e6;
+}
+
+.data-sources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.data-source-item {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.data-source-item h5 {
+  margin-bottom: 16px;
+  color: #495057;
+  font-size: 1.1em;
+}
+
+.economic-data {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.country-economic-data {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #007bff;
+}
+
+.risk-indicator {
+  font-size: 0.8em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
+  font-weight: bold;
+}
+
+.risk-indicator.high {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.risk-indicator.medium {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.risk-indicator.low {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.news-analysis p {
+  margin-bottom: 12px;
+  color: #6c757d;
+}
+
+.news-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.news-item {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #28a745;
+}
+
+.news-item a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.news-item a:hover {
+  text-decoration: underline;
+}
+
+.news-item small {
+  color: #6c757d;
+  font-size: 0.8em;
+}
+
+.data-sources-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.data-sources-list li {
+  margin-bottom: 8px;
+  color: #6c757d;
+}
+
+.api-risk-factors {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.api-risk-factors h5 {
+  margin-bottom: 16px;
+  color: #495057;
+}
+
+.api-factors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.api-risk-factor {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #ffc107;
+}
+
+.factor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
+.factor-header strong {
+  color: #495057;
+  flex: 1;
+}
+
+.factor-evidence {
+  font-size: 0.9em;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+.no-data {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+/* Details Grid */
 .details-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -327,6 +917,7 @@ body {
   color: #495057;
 }
 
+/* Footer */
 .footer {
   text-align: center;
   padding: 30px 20px;
@@ -344,6 +935,23 @@ body {
   
   .header h1 {
     font-size: 2rem;
+  }
+  
+  .brand-section {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .brand-text {
+    text-align: center;
+  }
+  
+  .company-logo {
+    height: 50px;
+  }
+  
+  .brand-text h1 {
+    font-size: 1.8em;
   }
   
   .assessment-section {
@@ -364,17 +972,63 @@ body {
   }
   
   .risk-overview {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    padding: 20px;
+  }
+  
+  .tab-button {
+    font-size: 0.9em;
+    padding: 12px 8px;
+  }
+  
+  .tab-content {
     padding: 20px;
   }
   
   .section {
-    padding: 20px;
+    padding: 20px 0;
   }
   
   .finding-item, .recommendation-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+  }
+  
+  .benchmark-grid,
+  .data-sources-grid,
+  .risk-factors-grid,
+  .api-factors-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .score-comparison,
+  .summary-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .legend-items {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .location-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .manufacturing-map,
+  .industry-benchmarking,
+  .enhanced-data {
+    padding: 16px;
+  }
+  
+  .summary-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .risk-overview {
+    grid-template-columns: 1fr;
   }
 }
