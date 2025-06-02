@@ -1,4 +1,4 @@
-# Enhanced AI-Powered Modern Slavery Assessment Backend
+# Enhanced AI-Powered Modern Slavery Assessment Backend with Industry Benchmarking & Mapping
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
@@ -302,6 +302,658 @@ class EnhancedModernSlaveryAssessment:
         final_score = max(industry_scores) if industry_scores else 50
         return final_score, risk_details
     
+    # Manufacturing Locations and Mapping
+    def get_manufacturing_locations(self, company_name, operating_countries):
+        """Get detailed manufacturing location data using AI and free APIs"""
+        try:
+            print(f"Getting manufacturing locations for {company_name}...")
+            
+            # Use AI to get specific manufacturing locations
+            messages = [
+                {"role": "system", "content": "You are a supply chain expert with detailed knowledge of manufacturing locations globally."},
+                {"role": "user", "content": f"""
+                Provide specific manufacturing and operational locations for {company_name}.
+                
+                Focus on:
+                1. Manufacturing facilities (factories, plants, production sites)
+                2. Major supplier locations
+                3. Distribution centers
+                4. Key operational hubs
+                
+                For each location provide:
+                - City, Country
+                - Facility type (manufacturing, supplier, distribution, etc.)
+                - Products/services produced there
+                - Approximate workforce size if known
+                
+                Respond with ONLY valid JSON:
+                {{
+                    "manufacturing_sites": [
+                        {{
+                            "city": "city name",
+                            "country": "country name",
+                            "facility_type": "manufacturing|supplier|distribution|office",
+                            "products": "what's produced/handled here",
+                            "workforce_size": "approximate number or range",
+                            "risk_level": "high|medium|low"
+                        }}
+                    ]
+                }}
+                """}
+            ]
+            
+            ai_response = self.call_openai_api(messages, max_tokens=1500, temperature=0.1)
+            
+            if ai_response:
+                try:
+                    cleaned_response = clean_json_response(ai_response)
+                    location_data = json.loads(cleaned_response)
+                    
+                    # Enhance with geocoding and risk data
+                    enhanced_locations = []
+                    for site in location_data.get('manufacturing_sites', []):
+                        coordinates = self.geocode_location(f"{site['city']}, {site['country']}")
+                        
+                        # Add country risk level
+                        country_risk = COUNTRY_RISK_INDEX.get(site['country'], 50)
+                        
+                        enhanced_site = {
+                            **site,
+                            'coordinates': coordinates,
+                            'country_risk_score': country_risk,
+                            'country_risk_level': self.score_to_level(country_risk)
+                        }
+                        
+                        enhanced_locations.append(enhanced_site)
+                    
+                    return enhanced_locations
+                    
+                except json.JSONDecodeError as e:
+                    print(f"Error parsing location data: {e}")
+            
+            # Fallback: create basic locations from operating countries
+            fallback_locations = []
+            for country in operating_countries[:10]:  # Limit to 10 for performance
+                coords = self.geocode_location(country)
+                if coords:
+                    fallback_locations.append({
+                        "city": "Major City",
+                        "country": country,
+                        "facility_type": "operations",
+                        "products": "Various operations",
+                        "workforce_size": "Unknown",
+                        "coordinates": coords,
+                        "country_risk_score": COUNTRY_RISK_INDEX.get(country, 50),
+                        "country_risk_level": self.score_to_level(COUNTRY_RISK_INDEX.get(country, 50))
+                    })
+            
+            return fallback_locations
+            
+        except Exception as e:
+            print(f"Error getting manufacturing locations: {e}")
+            return []
+
+    def geocode_location(self, location_query):
+        """Geocode location using free OpenStreetMap Nominatim API"""
+        try:
+            url = "https://nominatim.openstreetmap.org/search"
+            params = {
+                'q': location_query,
+                'format': 'json',
+                'limit': 1
+            }
+            headers = {
+                'User-Agent': 'ModernSlaveryAssessmentTool/1.0'
+            }
+            
+            response = requests.get(url, params=params, headers=headers, timeout=10)
+            time.sleep(1)  # Respect rate limits
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data:
+                    return {
+                        "lat": float(data[0]['lat']),
+                        "lng": float(data[0]['lon'])
+                    }
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error geocoding {location_query}: {e}")
+            return None
+
+    def generate_supply_chain_map_data(self, manufacturing_locations, company_name):
+        """Generate data for supply chain mapping visualization"""
+        try:
+            map_data = {
+                "company_name": company_name,
+                "total_locations": len(manufacturing_locations),
+                "risk_summary": {
+                    "high_risk_sites": len([s for s in manufacturing_locations if s.get('country_risk_score', 50) > 75]),
+                    "medium_risk_sites": len([s for s in manufacturing_locations if 50 <= s.get('country_risk_score', 50) <= 75]),
+                    "low_risk_sites": len([s for s in manufacturing_locations if s.get('country_risk_score', 50) < 50])
+                },
+                "locations": manufacturing_locations,
+                "risk_heatmap": self.generate_risk_heatmap(manufacturing_locations),
+                "supply_chain_tiers": self.categorize_supply_chain_tiers(manufacturing_locations)
+            }
+            
+            return map_data
+            
+        except Exception as e:
+            print(f"Error generating map data: {e}")
+            return {"locations": manufacturing_locations}
+
+    def generate_risk_heatmap(self, locations):
+        """Generate risk heatmap data for visualization"""
+        risk_zones = {}
+        
+        for location in locations:
+            country = location.get('country')
+            risk_score = location.get('country_risk_score', 50)
+            
+            if country not in risk_zones:
+                risk_zones[country] = {
+                    "country": country,
+                    "risk_score": risk_score,
+                    "site_count": 0,
+                    "facility_types": []
+                }
+            
+            risk_zones[country]["site_count"] += 1
+            if location.get('facility_type') not in risk_zones[country]["facility_types"]:
+                risk_zones[country]["facility_types"].append(location.get('facility_type'))
+        
+        return list(risk_zones.values())
+
+    def categorize_supply_chain_tiers(self, locations):
+        """Categorize locations into supply chain tiers"""
+        tiers = {
+            "tier_1": [],  # Direct suppliers/own facilities
+            "tier_2": [],  # Suppliers' suppliers
+            "tier_3": []   # Third-tier suppliers
+        }
+        
+        for location in locations:
+            facility_type = location.get('facility_type', '').lower()
+            
+            if facility_type in ['manufacturing', 'office', 'headquarters']:
+                tiers["tier_1"].append(location)
+            elif facility_type in ['supplier', 'distribution']:
+                tiers["tier_2"].append(location)
+            else:
+                tiers["tier_3"].append(location)
+        
+        return tiers
+
+    # Dynamic Industry Benchmarking
+    def get_ai_industry_analysis(self, primary_industry, all_industries):
+        """Use OpenAI to get comprehensive industry analysis"""
+        try:
+            messages = [
+                {"role": "system", "content": """You are a world-class ESG and supply chain risk analyst with comprehensive knowledge of industry benchmarks, modern slavery risks, and corporate compliance across all sectors globally. You have access to extensive databases of corporate performance, industry standards, and regulatory requirements."""},
+                {"role": "user", "content": f"""
+                Provide comprehensive industry benchmarking intelligence for: {primary_industry}
+                Related sectors: {', '.join(all_industries) if all_industries else 'None'}
+                
+                I need CURRENT, REALISTIC industry intelligence including:
+                
+                1. MODERN SLAVERY RISK ASSESSMENT:
+                - Typical risk score range for this industry (15-95 scale)
+                - Most common modern slavery risks specific to this sector
+                - Geographic hotspots where this industry typically operates
+                
+                2. INDUSTRY PERFORMANCE BENCHMARKS:
+                - Average modern slavery risk score for companies in this sector
+                - Percentage of companies with strong vs weak policies
+                - Typical audit completion rates and compliance levels
+                
+                3. PEER COMPANIES & BEST PRACTICES:
+                - 8-10 major companies in this industry (global leaders)
+                - Companies known for best practices in labor standards
+                - Companies that have faced modern slavery issues
+                
+                4. REGULATORY LANDSCAPE:
+                - Key regulations affecting this industry
+                - Emerging compliance requirements
+                - Industry-specific due diligence standards
+                
+                5. SUPPLY CHAIN CHARACTERISTICS:
+                - Typical supply chain complexity (high/medium/low)
+                - Common supplier countries and regions
+                - Most vulnerable points in the supply chain
+                
+                Be specific to the actual industry, not generic. Use real company names and current industry knowledge.
+                
+                Respond with ONLY valid JSON:
+                {{
+                    "industry_name": "{primary_industry}",
+                    "risk_profile": {{
+                        "average_risk_score": number_between_15_and_95,
+                        "risk_score_range": {{"min": number, "max": number}},
+                        "risk_level_distribution": {{"low": percentage, "medium": percentage, "high": percentage}}
+                    }},
+                    "common_risks": ["risk1", "risk2", "risk3", "risk4", "risk5"],
+                    "geographic_hotspots": ["country1", "country2", "country3", "country4"],
+                    "peer_companies": {{
+                        "industry_leaders": ["company1", "company2", "company3", "company4"],
+                        "best_practice_companies": ["company1", "company2"],
+                        "companies_with_issues": ["company1", "company2"]
+                    }},
+                    "regulatory_landscape": ["regulation1", "regulation2", "regulation3"],
+                    "supply_chain_complexity": "high|medium|low",
+                    "vulnerable_supply_chain_points": ["point1", "point2", "point3"],
+                    "industry_best_practices": ["practice1", "practice2", "practice3", "practice4"],
+                    "performance_benchmarks": {{
+                        "policy_coverage": "percentage of companies with policies",
+                        "audit_completion": "typical audit rates",
+                        "transparency_level": "industry transparency rating"
+                    }}
+                }}
+                """}
+            ]
+            
+            ai_response = self.call_openai_api(messages, max_tokens=2000, temperature=0.1)
+            
+            if ai_response:
+                try:
+                    cleaned_response = clean_json_response(ai_response)
+                    return json.loads(cleaned_response)
+                except json.JSONDecodeError as e:
+                    print(f"Error parsing AI industry analysis: {e}")
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error in AI industry analysis: {e}")
+            return None
+
+    def get_industry_esg_data(self, industry):
+        """Get ESG performance data using free APIs"""
+        try:
+            # Use GDELT to find ESG-related news for the industry
+            gdelt_url = "https://api.gdeltproject.org/api/v2/doc/doc"
+            
+            params = {
+                'query': f'"{industry}" AND ("ESG" OR "sustainability" OR "labor practices" OR "supply chain" OR "modern slavery")',
+                'mode': 'timelinevol',
+                'timespan': '1year',
+                'format': 'json'
+            }
+            
+            response = requests.get(gdelt_url, params=params, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Analyze ESG sentiment and frequency
+                total_mentions = sum(int(item.get('count', 0)) for item in data.get('timeline', []))
+                
+                return {
+                    'esg_news_volume': total_mentions,
+                    'esg_sentiment': 'high' if total_mentions > 100 else 'medium' if total_mentions > 20 else 'low',
+                    'recent_esg_focus': total_mentions > 50
+                }
+            
+            return {'esg_news_volume': 0, 'esg_sentiment': 'low'}
+            
+        except Exception as e:
+            print(f"Error getting ESG data: {e}")
+            return {}
+
+    def get_supply_chain_incidents_data(self, industry):
+        """Get supply chain incident data for industry benchmarking"""
+        try:
+            # Search multiple sources for supply chain incidents
+            total_incidents = 0
+            recent_incidents = 0
+            
+            # GDELT for incident tracking
+            gdelt_url = "https://api.gdeltproject.org/api/v2/doc/doc"
+            
+            incident_queries = [
+                f'"{industry}" AND ("forced labor" OR "modern slavery" OR "labor violation")',
+                f'"{industry}" AND ("supply chain audit" OR "factory inspection" OR "labor investigation")'
+            ]
+            
+            for query in incident_queries:
+                params = {
+                    'query': query,
+                    'mode': 'timelinevol',
+                    'timespan': '2years',
+                    'format': 'json'
+                }
+                
+                response = requests.get(gdelt_url, params=params, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    timeline = data.get('timeline', [])
+                    
+                    for item in timeline:
+                        count = int(item.get('count', 0))
+                        total_incidents += count
+                        
+                        # Check if recent (last 6 months)
+                        date_str = item.get('date', '')
+                        if date_str and len(date_str) >= 8:
+                            try:
+                                item_date = datetime.strptime(date_str[:8], '%Y%m%d')
+                                if item_date > datetime.now() - timedelta(days=180):
+                                    recent_incidents += count
+                            except ValueError:
+                                pass
+                
+                time.sleep(0.5)  # Rate limiting
+            
+            # Calculate industry incident risk level
+            incident_risk = 'high' if total_incidents > 100 else 'medium' if total_incidents > 20 else 'low'
+            
+            return {
+                'total_incidents_2years': total_incidents,
+                'recent_incidents_6months': recent_incidents,
+                'incident_risk_level': incident_risk,
+                'incident_trend': 'increasing' if recent_incidents > total_incidents * 0.3 else 'stable'
+            }
+            
+        except Exception as e:
+            print(f"Error getting supply chain incidents data: {e}")
+            return {}
+
+    def synthesize_industry_benchmark(self, industry_intel, esg_data, incidents_data):
+        """Combine all data sources into comprehensive benchmark"""
+        try:
+            if not industry_intel:
+                return None
+            
+            # Calculate dynamic industry average based on AI analysis
+            base_score = industry_intel.get('risk_profile', {}).get('average_risk_score', 55)
+            
+            # Adjust based on ESG sentiment and incidents
+            esg_adjustment = 0
+            if esg_data.get('esg_sentiment') == 'high':
+                esg_adjustment = -5  # Lower risk if high ESG focus
+            elif esg_data.get('esg_sentiment') == 'low':
+                esg_adjustment = 5   # Higher risk if low ESG focus
+            
+            # Adjust based on incidents
+            incident_adjustment = 0
+            if incidents_data.get('incident_risk_level') == 'high':
+                incident_adjustment = 8
+            elif incidents_data.get('incident_risk_level') == 'low':
+                incident_adjustment = -3
+            
+            adjusted_industry_score = max(15, min(95, base_score + esg_adjustment + incident_adjustment))
+            
+            return {
+                "matched_industry": industry_intel.get('industry_name'),
+                "industry_average_score": adjusted_industry_score,
+                "data_sources": ["OpenAI Industry Intelligence", "GDELT ESG Analysis", "GDELT Incident Analysis"],
+                "peer_companies": industry_intel.get('peer_companies', {}).get('industry_leaders', []),
+                "industry_common_risks": industry_intel.get('common_risks', []),
+                "industry_best_practices": industry_intel.get('industry_best_practices', []),
+                "regulatory_focus": industry_intel.get('regulatory_landscape', []),
+                "supply_chain_complexity": industry_intel.get('supply_chain_complexity', 'medium'),
+                "performance_insights": {
+                    "risk_distribution": industry_intel.get('risk_profile', {}).get('risk_level_distribution', {}),
+                    "esg_sentiment": esg_data.get('esg_sentiment', 'unknown'),
+                    "incident_analysis": incidents_data
+                },
+                "benchmark_quality": "high" if industry_intel and esg_data else "medium",
+                "last_updated": datetime.now().strftime("%Y-%m-%d")
+            }
+            
+        except Exception as e:
+            print(f"Error synthesizing benchmark: {e}")
+            return None
+
+    def get_dynamic_industry_benchmark(self, company_name, primary_industry, all_industries):
+        """Get real industry benchmarking data using AI and free APIs"""
+        try:
+            print(f"Getting dynamic industry benchmark for {primary_industry}...")
+            
+            # Step 1: Use OpenAI to get comprehensive industry intelligence
+            industry_intelligence = self.get_ai_industry_analysis(primary_industry, all_industries)
+            
+            # Step 2: Get ESG/CSR data from free sources
+            esg_data = self.get_industry_esg_data(primary_industry)
+            
+            # Step 3: Get incident data
+            incidents_data = self.get_supply_chain_incidents_data(primary_industry)
+            
+            # Step 4: Combine all data for comprehensive benchmark
+            benchmark = self.synthesize_industry_benchmark(
+                industry_intelligence, esg_data, incidents_data
+            )
+            
+            return benchmark
+            
+        except Exception as e:
+            print(f"Error getting dynamic industry benchmark: {e}")
+            return None
+
+    def calculate_dynamic_percentile(self, company_score, industry_avg, risk_distribution):
+        """Calculate percentile based on actual industry distribution"""
+        try:
+            if not risk_distribution:
+                # Fallback to simple calculation
+                return self.calculate_percentile(company_score, industry_avg)
+            
+            # Use actual distribution if available
+            low_pct = risk_distribution.get('low', 30)
+            medium_pct = risk_distribution.get('medium', 50)
+            high_pct = risk_distribution.get('high', 20)
+            
+            if company_score <= 35:
+                return f"Top {low_pct}% (Low Risk)"
+            elif company_score <= 65:
+                return f"Middle {medium_pct}% (Medium Risk)"
+            else:
+                return f"Bottom {high_pct}% (High Risk)"
+                
+        except Exception as e:
+            return "Percentile calculation unavailable"
+
+    def calculate_percentile(self, company_score, industry_avg):
+        """Calculate approximate percentile ranking"""
+        # Simplified percentile calculation
+        if company_score <= industry_avg - 20:
+            return "Top 10%"
+        elif company_score <= industry_avg - 10:
+            return "Top 25%"
+        elif company_score <= industry_avg + 5:
+            return "Average (50th percentile)"
+        elif company_score <= industry_avg + 15:
+            return "Below average (75th percentile)"
+        else:
+            return "Bottom 10%"
+
+    def generate_industry_comparison(self, company_score, company_industries, primary_industry):
+        """Generate dynamic industry comparison"""
+        try:
+            # Get dynamic benchmark data
+            benchmark_data = self.get_dynamic_industry_benchmark(
+                "", primary_industry, company_industries
+            )
+            
+            if not benchmark_data:
+                return None
+            
+            industry_avg = benchmark_data['industry_average_score']
+            performance_vs_peers = "above average" if company_score < industry_avg else "below average"
+            score_difference = abs(company_score - industry_avg)
+            
+            # Calculate percentile based on industry distribution
+            percentile = self.calculate_dynamic_percentile(
+                company_score, 
+                industry_avg, 
+                benchmark_data.get('performance_insights', {}).get('risk_distribution', {})
+            )
+            
+            return {
+                "matched_industry": benchmark_data['matched_industry'],
+                "industry_average_score": industry_avg,
+                "company_score": company_score,
+                "performance_vs_peers": performance_vs_peers,
+                "score_difference": score_difference,
+                "percentile_ranking": percentile,
+                "peer_companies": benchmark_data['peer_companies'],
+                "industry_common_risks": benchmark_data['industry_common_risks'],
+                "industry_best_practices": benchmark_data['industry_best_practices'],
+                "regulatory_focus": benchmark_data['regulatory_focus'],
+                "benchmark_insights": self.generate_benchmark_insights(
+                    company_score, industry_avg, performance_vs_peers, benchmark_data
+                ),
+                "data_quality": benchmark_data.get('benchmark_quality', 'medium'),
+                "last_updated": benchmark_data.get('last_updated')
+            }
+            
+        except Exception as e:
+            print(f"Error generating dynamic industry comparison: {e}")
+            return None
+
+    def generate_benchmark_insights(self, company_score, industry_avg, performance, benchmark_data):
+        """Generate insights based on dynamic benchmark data"""
+        insights = []
+        
+        score_diff = abs(company_score - industry_avg)
+        
+        if performance == "above average":
+            insights.append(f"Company risk score is {score_diff} points below industry average of {industry_avg}")
+            insights.append("Performance is better than typical industry peers")
+            
+            # Add specific insights based on benchmark data
+            if benchmark_data.get('performance_insights', {}).get('esg_sentiment') == 'high':
+                insights.append("Industry has high ESG focus - company aligns with positive trend")
+        else:
+            insights.append(f"Company risk score is {score_diff} points above industry average of {industry_avg}")
+            insights.append("Higher risk profile requires attention to industry-specific challenges")
+            
+            # Add specific improvement areas
+            if benchmark_data.get('industry_common_risks'):
+                top_risk = benchmark_data['industry_common_risks'][0]
+                insights.append(f"Focus on industry's top risk: {top_risk}")
+        
+        # Add regulatory insights
+        if benchmark_data.get('regulatory_focus'):
+            insights.append(f"Key regulatory focus: {', '.join(benchmark_data['regulatory_focus'][:2])}")
+        
+        return insights
+
+    # Enhanced API Data Collection
+    def get_economic_indicators(self, countries):
+        """Get economic data from World Bank API (free)"""
+        try:
+            economic_data = {}
+            
+            for country in countries[:5]:  # Limit for performance
+                # World Bank API for GDP per capita
+                wb_url = f"https://api.worldbank.org/v2/country/{country}/indicator/NY.GDP.PCAP.CD"
+                params = {'format': 'json', 'date': '2022:2023', 'per_page': 1000}
+                
+                response = requests.get(wb_url, params=params, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if len(data) > 1 and data[1]:
+                        gdp_data = data[1][0] if data[1] else None
+                        if gdp_data and gdp_data.get('value'):
+                            economic_data[country] = {
+                                'gdp_per_capita': gdp_data['value'],
+                                'year': gdp_data['date'],
+                                'economic_risk_factor': 'high' if gdp_data['value'] < 5000 else 'medium' if gdp_data['value'] < 15000 else 'low'
+                            }
+                
+                time.sleep(0.5)  # Rate limiting
+            
+            return economic_data
+            
+        except Exception as e:
+            print(f"Error getting economic indicators: {e}")
+            return {}
+
+    def get_enhanced_news_data(self, company_name):
+        """Get enhanced news data using GDELT (free)"""
+        try:
+            # GDELT Global Knowledge Graph API (free)
+            gdelt_url = "https://api.gdeltproject.org/api/v2/doc/doc"
+            
+            params = {
+                'query': f'{company_name} AND ("forced labor" OR "modern slavery" OR "human trafficking" OR "labor rights")',
+                'mode': 'artlist',
+                'maxrecords': 10,
+                'format': 'json'
+            }
+            
+            response = requests.get(gdelt_url, params=params, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                articles = data.get('articles', [])
+                
+                enhanced_news = []
+                for article in articles:
+                    enhanced_news.append({
+                        'title': article.get('title', ''),
+                        'url': article.get('url', ''),
+                        'date': article.get('seendate', ''),
+                        'domain': article.get('domain', ''),
+                        'language': article.get('language', ''),
+                        'tone': article.get('tone', 0),  # GDELT tone score
+                        'source_country': article.get('sourcecountry', '')
+                    })
+                
+                return enhanced_news
+            
+            return []
+            
+        except Exception as e:
+            print(f"Error getting GDELT news data: {e}")
+            return []
+
+    def enhance_assessment_with_apis(self, company_name, operating_countries):
+        """Enhance assessment with all free API data"""
+        try:
+            print("Enhancing assessment with additional API data...")
+            
+            enhanced_data = {
+                'economic_indicators': self.get_economic_indicators(operating_countries),
+                'enhanced_news': self.get_enhanced_news_data(company_name),
+            }
+            
+            # Generate additional risk insights from API data
+            api_risk_factors = self.analyze_api_risk_factors(enhanced_data)
+            
+            enhanced_data['api_risk_factors'] = api_risk_factors
+            enhanced_data['data_sources_used'] = [
+                'World Bank Economic Data',
+                'GDELT News Analysis',
+                'OpenStreetMap Geocoding'
+            ]
+            
+            return enhanced_data
+            
+        except Exception as e:
+            print(f"Error enhancing with APIs: {e}")
+            return {}
+
+    def analyze_api_risk_factors(self, enhanced_data):
+        """Analyze risk factors from API data"""
+        risk_factors = []
+        
+        # Economic risk analysis
+        economic_data = enhanced_data.get('economic_indicators', {})
+        for country, data in economic_data.items():
+            if data.get('economic_risk_factor') == 'high':
+                risk_factors.append({
+                    'factor': f'Low GDP per capita in {country}',
+                    'impact': 'medium',
+                    'evidence': f'GDP per capita: ${data.get("gdp_per_capita", 0):,.0f} indicates economic vulnerability'
+                })
+        
+        return risk_factors
+    
     def comprehensive_ai_analysis(self, company_data):
         """Enhanced AI analysis with more aggressive and specific scoring"""
         try:
@@ -498,11 +1150,28 @@ class EnhancedModernSlaveryAssessment:
             )
             print(f"Industry risk: {industry_risk_score}")
             
-            # Step 4: Gather news data
+            # Step 4: Get manufacturing locations and map data
+            manufacturing_locations = self.get_manufacturing_locations(
+                company_name, 
+                profile.get('operating_countries', [])
+            )
+            
+            supply_chain_map = self.generate_supply_chain_map_data(
+                manufacturing_locations, 
+                company_name
+            )
+            
+            # Step 5: Gather news data
             news_data = self.search_news_incidents(company_name)
             print(f"Found {len(news_data)} news articles")
             
-            # Step 5: AI-powered comprehensive analysis
+            # Step 6: Enhanced API data
+            enhanced_api_data = self.enhance_assessment_with_apis(
+                company_name,
+                profile.get('operating_countries', [])
+            )
+            
+            # Step 7: AI-powered comprehensive analysis
             company_data = {
                 'profile': profile,
                 'geographic_risk': {'score': geo_risk_score, 'details': geo_details},
@@ -513,7 +1182,20 @@ class EnhancedModernSlaveryAssessment:
             print("Performing AI-powered comprehensive analysis...")
             ai_analysis = self.comprehensive_ai_analysis(company_data)
             
-            # Step 6: Format final response
+            # Step 8: Generate industry benchmarking
+            industry_comparison = self.generate_industry_comparison(
+                ai_analysis['overall_risk_score'],
+                profile.get('all_industries', []),
+                profile.get('primary_industry')
+            )
+            
+            # Merge API risk factors with existing risk factors
+            if enhanced_api_data.get('api_risk_factors'):
+                existing_factors = ai_analysis.get('risk_factors', [])
+                combined_factors = existing_factors + enhanced_api_data['api_risk_factors']
+                ai_analysis['risk_factors'] = combined_factors
+            
+            # Step 9: Format final response
             final_assessment = {
                 'company_name': company_name,
                 'assessment_id': f"ASSESS_{int(time.time())}",
@@ -543,10 +1225,17 @@ class EnhancedModernSlaveryAssessment:
                 'risk_indicators': [f['description'] for f in ai_analysis.get('key_findings', [])],  # For frontend compatibility
                 
                 'company_profile': profile,
+                'manufacturing_locations': manufacturing_locations,
+                'supply_chain_map': supply_chain_map,
+                'industry_benchmarking': industry_comparison,
+                'enhanced_data': enhanced_api_data,
+                
                 'data_sources': {
                     'news_articles': len(news_data),
                     'geographic_data': len(profile.get('operating_countries', [])),
-                    'industry_data': len(profile.get('all_industries', []))
+                    'industry_data': len(profile.get('all_industries', [])),
+                    'manufacturing_sites': len(manufacturing_locations),
+                    'api_sources': len(enhanced_api_data.get('data_sources_used', []))
                 },
                 
                 'status': 'completed'
@@ -642,12 +1331,16 @@ def get_status():
     
     return jsonify({
         'status': 'healthy',
-        'message': 'Enhanced AI-Powered Modern Slavery Assessment API',
+        'message': 'Enhanced AI-Powered Modern Slavery Assessment API with Industry Benchmarking & Mapping',
         'features': [
             'GPT-4o powered intelligent analysis',
+            'Dynamic industry benchmarking with real data',
+            'Global manufacturing mapping',
             'Enhanced geographic risk calculation',
             'Advanced industry risk detection',
             'Comprehensive company profiling',
+            'Supply chain visualization',
+            'Free API data integration (World Bank, GDELT, OpenStreetMap)',
             'Differentiated risk scoring (15-95 range)',
             'Company-specific intelligence gathering'
         ],
@@ -715,11 +1408,15 @@ if __name__ == '__main__':
     print("🧠 Using GPT-4o for intelligent, differentiated risk assessment")
     print("🎯 Enhanced Features:")
     print("   - Comprehensive company intelligence gathering")
+    print("   - Dynamic industry benchmarking with real data")
+    print("   - Global manufacturing mapping with geocoding")
     print("   - Advanced geographic & industry risk calculation")
     print("   - AI-powered specific risk analysis")
+    print("   - Free API integration (World Bank, GDELT, OpenStreetMap)")
+    print("   - Supply chain visualization and mapping")
     print("   - Differentiated scoring (15-95 range)")
     print("   - Fixed risk level thresholds for better differentiation")
-    print("🌐 Ready for comprehensive AI-powered assessments!")
+    print("🌐 Ready for comprehensive AI-powered assessments with mapping and benchmarking!")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
