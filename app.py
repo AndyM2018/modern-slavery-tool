@@ -492,39 +492,19 @@ class EnhancedModernSlaveryAssessment:
         """Use OpenAI to get comprehensive industry analysis"""
         try:
             messages = [
-                {"role": "system", "content": """You are a world-class ESG and supply chain risk analyst with comprehensive knowledge of industry benchmarks, modern slavery risks, and corporate compliance across all sectors globally. You have access to extensive databases of corporate performance, industry standards, and regulatory requirements."""},
+                {"role": "system", "content": """You are a world-class ESG and supply chain risk analyst. Provide SPECIFIC, INDUSTRY-UNIQUE responses. Never use generic answers like "forced labor in manufacturing" - be specific to the exact industry."""},
                 {"role": "user", "content": f"""
-                Provide comprehensive industry benchmarking intelligence for: {primary_industry}
-                Related sectors: {', '.join(all_industries) if all_industries else 'None'}
+                Provide specific industry intelligence for: {primary_industry}
                 
-                I need CURRENT, REALISTIC industry intelligence including:
+                Requirements:
+                1. All risks must be SPECIFIC to {primary_industry} (not generic)
+                2. Use real company names from {primary_industry}
+                3. Provide industry-specific regulations and practices
                 
-                1. MODERN SLAVERY RISK ASSESSMENT:
-                - Typical risk score range for this industry (15-95 scale)
-                - Most common modern slavery risks specific to this sector
-                - Geographic hotspots where this industry typically operates
-                
-                2. INDUSTRY PERFORMANCE BENCHMARKS:
-                - Average modern slavery risk score for companies in this sector
-                - Percentage of companies with strong vs weak policies
-                - Typical audit completion rates and compliance levels
-                
-                3. PEER COMPANIES & BEST PRACTICES:
-                - 8-10 major companies in this industry (global leaders)
-                - Companies known for best practices in labor standards
-                - Companies that have faced modern slavery issues
-                
-                4. REGULATORY LANDSCAPE:
-                - Key regulations affecting this industry
-                - Emerging compliance requirements
-                - Industry-specific due diligence standards
-                
-                5. SUPPLY CHAIN CHARACTERISTICS:
-                - Typical supply chain complexity (high/medium/low)
-                - Common supplier countries and regions
-                - Most vulnerable points in the supply chain
-                
-                Be specific to the actual industry, not generic. Use real company names and current industry knowledge.
+                Examples of specificity needed:
+                - Fast Fashion: "2-week production cycles", "unauthorized subcontracting in Bangladesh"
+                - Electronics: "conflict minerals in DRC", "student worker programs in China"
+                - Agriculture: "seasonal migrant exploitation", "child labor in cocoa harvesting"
                 
                 Respond with ONLY valid JSON:
                 {{
@@ -534,8 +514,8 @@ class EnhancedModernSlaveryAssessment:
                         "risk_score_range": {{"min": number, "max": number}},
                         "risk_level_distribution": {{"low": percentage, "medium": percentage, "high": percentage}}
                     }},
-                    "common_risks": ["risk1", "risk2", "risk3", "risk4", "risk5"],
-                    "geographic_hotspots": ["country1", "country2", "country3", "country4"],
+                    "common_risks": ["specific_industry_risk_1", "specific_industry_risk_2", "specific_industry_risk_3", "specific_industry_risk_4"],
+                    "geographic_hotspots": ["country1", "country2", "country3"],
                     "peer_companies": {{
                         "industry_leaders": ["company1", "company2", "company3", "company4"],
                         "best_practice_companies": ["company1", "company2"],
@@ -546,9 +526,9 @@ class EnhancedModernSlaveryAssessment:
                     "vulnerable_supply_chain_points": ["point1", "point2", "point3"],
                     "industry_best_practices": ["practice1", "practice2", "practice3", "practice4"],
                     "performance_benchmarks": {{
-                        "policy_coverage": "percentage of companies with policies",
-                        "audit_completion": "typical audit rates",
-                        "transparency_level": "industry transparency rating"
+                        "policy_coverage": "percentage",
+                        "audit_completion": "rates",
+                        "transparency_level": "rating"
                     }}
                 }}
                 """}
