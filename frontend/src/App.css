@@ -1065,11 +1065,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px; /* Reduced from 15px to 8px (about half) */
+  gap: 5px; /* Tighter spacing to match logo */
 }
 
 .company-logo {
-  height: 70px; /* Smaller than before */
+  height: 65px; /* Slightly adjusted for better proportion */
   width: auto;
   max-width: 200px;
   object-fit: contain;
@@ -1079,11 +1079,12 @@ body {
 
 .company-name {
   color: white;
-  font-size: 1.8em; /* Smaller than main title */
-  font-weight: 500;
+  font-size: 1.75em; /* Slightly adjusted for better proportion */
+  font-weight: 400; /* Lighter weight to match logo */
   font-family: 'Avenir', 'Avenir Next', -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
-  opacity: 0.95;
+  opacity: 1; /* Full opacity like in logo */
+  letter-spacing: 0.02em; /* Slight letter spacing for cleaner look */
 }
 
 /* Second line: Main title (no shield) */
@@ -1118,15 +1119,15 @@ body {
   
   .logo-line {
     flex-direction: column;
-    gap: 5px; /* Reduced mobile gap too */
+    gap: 3px; /* Even tighter on mobile */
   }
   
   .company-logo {
-    height: 60px;
+    height: 55px; /* Proportionally adjusted */
   }
   
   .company-name {
-    font-size: 1.5em;
+    font-size: 1.4em; /* Proportionally adjusted */
   }
   
   .title-line {
@@ -1145,15 +1146,11 @@ body {
 
 @media (max-width: 480px) {
   .company-logo {
-    height: 50px;
+    height: 45px; /* Proportionally adjusted */
   }
   
   .company-name {
-    font-size: 1.3em;
-  }
-  
-  .shield-icon {
-    font-size: 1.8em;
+    font-size: 1.2em; /* Proportionally adjusted */
   }
   
   .main-title {
