@@ -439,8 +439,13 @@ function App() {
     <div className="App">
       <div className="container">
         <header className="header">
-          <h1>🛡️ Modern Slavery Risk Assessment</h1>
-          <p>AI-powered assessment tool with industry benchmarking and global supply chain mapping</p>
+          <div className="brand-section">
+            <img src="/rosetta-logo.png" alt="Rosetta Solutions Logo" className="company-logo" />
+            <div className="brand-text">
+              <h1>🛡️ Rosetta Solutions - Modern Slavery Risk Assessment</h1>
+              <p>AI-Powered Analysis | Industry Benchmarking | Global Supply Chain Mapping</p>
+            </div>
+          </div>
         </header>
         
         <div className="assessment-section">
