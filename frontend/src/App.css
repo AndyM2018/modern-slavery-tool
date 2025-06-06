@@ -237,13 +237,13 @@ body {
   border: 1px solid #f5c6cb;
 }
 
-/* Results Container - NO SCROLL, CONSISTENT SIZE */
+/* Results Container - ABSOLUTE FIXED HEIGHT */
 .results-container {
   background-color: #fff;
   border-radius: 16px;
   overflow: visible !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  min-height: 1000px !important;
+  height: 1200px !important; /* FIXED height - never changes */
 }
 
 .results-header {
@@ -355,10 +355,10 @@ body {
   background-color: white;
 }
 
-/* Tab Content - NO SCROLL, CONSISTENT HEIGHT */
+/* Tab Content - ABSOLUTE FIXED HEIGHT */
 .tab-content {
   padding: 30px;
-  min-height: 800px !important;
+  height: 900px !important; /* FIXED height - never changes */
   overflow: visible !important;
 }
 
@@ -1032,7 +1032,7 @@ body {
   }
   
   .results-container {
-    min-height: 900px !important;
+    height: 1000px !important; /* FIXED height for mobile */
   }
   
   .results-header {
@@ -1052,7 +1052,7 @@ body {
   
   .tab-content {
     padding: 20px;
-    min-height: 700px !important;
+    height: 700px !important; /* FIXED height for mobile */
     overflow: visible !important;
   }
   
@@ -1120,11 +1120,11 @@ body {
   }
   
   .results-container {
-    min-height: 800px !important;
+    height: 900px !important; /* FIXED height for small screens */
   }
   
   .tab-content {
-    min-height: 600px !important;
+    height: 600px !important; /* FIXED height for small screens */
     overflow: visible !important;
   }
 }
