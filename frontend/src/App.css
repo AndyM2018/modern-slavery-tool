@@ -1110,56 +1110,10 @@ body {
     grid-template-columns: 1fr;
   }
 }
-/* Add this to the very bottom of your App.css file */
+/* Add ONLY this simple rule to your App.css */
 
-/* FORCE ALL TABS TO BE EXACTLY THE SAME HEIGHT */
 .tab-content-wrapper {
-  min-height: 1000px !important;
-  height: 1000px !important;
-  overflow-y: auto !important;
-  box-sizing: border-box !important;
+  min-height: 800px;
 }
 
-/* Force the results container to never change size */
-.results-container {
-  height: 1200px !important;
-  min-height: 1200px !important;
-  max-height: 1200px !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-/* Make sure tab content takes up remaining space */
-.tab-content {
-  flex: 1 !important;
-  overflow: hidden !important;
-  padding: 0 !important;
-}
-
-/* Mobile overrides */
-@media (max-width: 768px) {
-  .tab-content-wrapper {
-    height: 800px !important;
-    min-height: 800px !important;
-  }
-  
-  .results-container {
-    height: 1000px !important;
-    min-height: 1000px !important;
-    max-height: 1000px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .tab-content-wrapper {
-    height: 700px !important;
-    min-height: 700px !important;
-  }
-  
-  .results-container {
-    height: 900px !important;
-    min-height: 900px !important;
-    max-height: 900px !important;
-  }
-}
+/* That's it - nothing else! */
