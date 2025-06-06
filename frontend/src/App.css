@@ -1032,3 +1032,54 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* Add to your App.css */
+.brand-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.company-logo {
+  height: 60px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* Makes logo white for dark background */
+}
+
+.brand-text {
+  text-align: left;
+}
+
+.brand-text h1 {
+  margin-bottom: 8px;
+  color: white;
+}
+
+.brand-text p {
+  margin: 0;
+  opacity: 0.9;
+  color: white;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .brand-section {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .brand-text {
+    text-align: center;
+  }
+  
+  .company-logo {
+    height: 50px;
+  }
+  
+  .brand-text h1 {
+    font-size: 1.8em;
+  }
+}
