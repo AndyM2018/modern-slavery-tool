@@ -445,7 +445,6 @@ return (
             <h2 className="company-name">Rosetta Solutions</h2>
           </div>
           <div className="title-line">
-            <span className="shield-icon">🛡️</span>
             <h1 className="main-title">Modern Slavery Risk Assessment</h1>
           </div>
           <p className="subtitle">AI-Powered Analysis | Industry Benchmarking | Global Supply Chain Mapping</p>
