@@ -243,9 +243,7 @@ body {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  height: 700px; /* Fixed height to prevent resizing */
-  display: flex;
-  flex-direction: column;
+  min-height: 750px; /* Ensures the container doesn't shrink */
 }
 
 .results-header {
@@ -257,7 +255,6 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
-  flex-shrink: 0; /* Prevents header from shrinking */
 }
 
 .results-header h2 {
@@ -332,7 +329,6 @@ body {
   border-bottom: 2px solid #e9ecef;
   background: #f8f9fa;
   margin: 0;
-  flex-shrink: 0; /* Prevents navigation from shrinking */
 }
 
 .tab-button {
@@ -359,13 +355,10 @@ body {
   background-color: white;
 }
 
-/* Tab Content - FIXED HEIGHT WITH SCROLL */
+/* Tab Content - CONSISTENT HEIGHT WITHOUT SCROLL */
 .tab-content {
   padding: 30px;
-  min-height: 500px; /* Consistent minimum height */
-  max-height: 500px; /* Prevents growing beyond this */
-  overflow-y: auto; /* Enables scrolling when content exceeds height */
-  flex: 1; /* Takes remaining space after header */
+  min-height: 600px; /* This ensures consistent height across all tabs */
 }
 
 /* Section Styles */
@@ -1048,7 +1041,7 @@ body {
   
   /* MOBILE TAB HEIGHT FIXES */
   .results-container {
-    height: 600px; /* Slightly shorter on mobile */
+    min-height: 650px; /* Adjusted for mobile */
   }
   
   .results-header {
@@ -1068,8 +1061,7 @@ body {
   
   .tab-content {
     padding: 20px;
-    min-height: 400px;
-    max-height: 400px;
+    min-height: 500px; /* Smaller but consistent on mobile */
   }
   
   .section {
@@ -1137,11 +1129,52 @@ body {
   
   /* SMALLEST SCREEN TAB HEIGHT FIXES */
   .results-container {
-    height: 550px; /* Even shorter on small screens */
+    min-height: 600px; /* Adjusted for small screens */
   }
   
   .tab-content {
-    min-height: 350px;
-    max-height: 350px;
+    min-height: 450px; /* Even smaller on tiny screens */
   }
+}/* Complete App.css - Modern Slavery Assessment Tool with Enhanced Features */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa;
+}
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex: 1;
+}
+
+/* Header Styles */
+.header {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
