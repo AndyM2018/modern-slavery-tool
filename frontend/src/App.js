@@ -660,7 +660,7 @@ function App() {
         </div>
         
         <footer className="footer">
-          <p>This tool provides risk assessment guidance using AI analysis, industry benchmarking, and global mapping. Professional legal advice should be sought for specific situations.</p>
+          <p>© 2025 Rosetta Solutions. This tool provides risk assessment guidance using AI analysis, industry benchmarking, and global mapping. Professional legal advice should be sought for specific situations.</p>
         </footer>
       </div>
     </div>
