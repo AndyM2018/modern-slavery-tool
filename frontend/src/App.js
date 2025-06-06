@@ -435,18 +435,22 @@ function App() {
     setActiveTab('overview');
   };
 
-  return (
-    <div className="App">
-      <div className="container">
-        <header className="header">
-          <div className="brand-section">
+return (
+  <div className="App">
+    <div className="container">
+      <header className="header">
+        <div className="brand-section">
+          <div className="logo-line">
             <img src="/rosetta-logo.png" alt="Rosetta Solutions Logo" className="company-logo" />
-            <div className="brand-text">
-              <h1>🛡️ Rosetta Solutions - Modern Slavery Risk Assessment</h1>
-              <p>AI-Powered Analysis | Industry Benchmarking | Global Supply Chain Mapping</p>
-            </div>
+            <h2 className="company-name">Rosetta Solutions</h2>
           </div>
-        </header>
+          <div className="title-line">
+            <span className="shield-icon">🛡️</span>
+            <h1 className="main-title">Modern Slavery Risk Assessment</h1>
+          </div>
+          <p className="subtitle">AI-Powered Analysis | Industry Benchmarking | Global Supply Chain Mapping</p>
+        </div>
+      </header>
         
         <div className="assessment-section">
           <form onSubmit={handleSubmit} className="assessment-form">
