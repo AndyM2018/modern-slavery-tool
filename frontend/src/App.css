@@ -1128,3 +1128,9 @@ body {
     overflow: visible !important;
   }
 }
+/* TEMPORARY TEST - Add this at the bottom of your App.css file */
+.results-container * {
+  height: 200px !important;
+  min-height: 200px !important;
+  max-height: 200px !important;
+}
