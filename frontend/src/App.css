@@ -1112,8 +1112,8 @@ body {
 }
 /* Add ONLY this simple rule to your App.css */
 
-.tab-content-wrapper {
-  min-height: 800px;
+.tab-content {
+  min-height: 800px !important;
 }
 
 /* That's it - nothing else! */
