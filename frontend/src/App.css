@@ -237,13 +237,13 @@ body {
   border: 1px solid #f5c6cb;
 }
 
-/* Results Container - FIXED HEIGHT TO PREVENT ANY RESIZING */
+/* Results Container - ABSOLUTE FIXED HEIGHT */
 .results-container {
   background-color: #fff;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  height: 800px; /* FIXED height - will never change */
+  height: 900px !important; /* MUCH larger fixed height with !important */
   display: flex;
   flex-direction: column;
 }
@@ -359,12 +359,12 @@ body {
   background-color: white;
 }
 
-/* Tab Content - FIXED HEIGHT WITH NO SCROLL */
+/* Tab Content - MUCH LARGER FIXED HEIGHT */
 .tab-content {
   padding: 30px;
-  height: 500px; /* FIXED height - never changes */
-  overflow: hidden; /* NO scroll bars */
-  flex: 1; /* Takes remaining space in flex container */
+  height: 650px !important; /* MUCH larger fixed height with !important */
+  overflow-y: auto; /* Allow scroll if needed, but container size stays fixed */
+  flex: 1;
 }
 
 /* Section Styles */
@@ -1045,9 +1045,9 @@ body {
     min-width: unset;
   }
   
-  /* MOBILE TAB HEIGHT FIXES - FIXED HEIGHTS */
+  /* MOBILE TAB HEIGHT FIXES - MUCH LARGER FIXED HEIGHTS */
   .results-container {
-    height: 700px; /* FIXED height for mobile */
+    height: 800px !important; /* Larger fixed height for mobile with !important */
   }
   
   .results-header {
@@ -1067,8 +1067,8 @@ body {
   
   .tab-content {
     padding: 20px;
-    height: 400px; /* FIXED height for mobile */
-    overflow: hidden; /* NO scroll bars */
+    height: 550px !important; /* Larger fixed height for mobile with !important */
+    overflow-y: auto; /* Allow scroll if needed */
   }
   
   .section {
@@ -1134,14 +1134,14 @@ body {
     grid-template-columns: 1fr;
   }
   
-  /* SMALLEST SCREEN TAB HEIGHT FIXES - FIXED HEIGHTS */
+  /* SMALLEST SCREEN TAB HEIGHT FIXES - LARGER FIXED HEIGHTS */
   .results-container {
-    height: 650px; /* FIXED height for small screens */
+    height: 750px !important; /* Larger fixed height for small screens with !important */
   }
   
   .tab-content {
-    height: 350px; /* FIXED height for small screens */
-    overflow: hidden; /* NO scroll bars */
+    height: 500px !important; /* Larger fixed height for small screens with !important */
+    overflow-y: auto; /* Allow scroll if needed */
   }
 }/* Complete App.css - Modern Slavery Assessment Tool with Enhanced Features */
 
