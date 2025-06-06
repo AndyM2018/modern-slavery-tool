@@ -237,15 +237,15 @@ body {
   border: 1px solid #f5c6cb;
 }
 
-/* Results Container - ABSOLUTE FIXED HEIGHT */
+/* Results Container - LARGE FIXED HEIGHT, NO SCROLL ANYWHERE */
 .results-container {
   background-color: #fff;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible !important; /* NO overflow control - show everything */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  height: 900px !important; /* MUCH larger fixed height with !important */
-  display: flex;
-  flex-direction: column;
+  height: auto !important; /* Let it grow naturally */
+  min-height: 1000px !important; /* Large minimum to prevent shrinking */
+  display: block !important; /* Remove flexbox that was causing issues */
 }
 
 .results-header {
@@ -359,12 +359,13 @@ body {
   background-color: white;
 }
 
-/* Tab Content - MUCH LARGER FIXED HEIGHT */
+/* Tab Content - NO HEIGHT RESTRICTION, NO SCROLL */
 .tab-content {
   padding: 30px;
-  height: 650px !important; /* MUCH larger fixed height with !important */
-  overflow-y: auto; /* Allow scroll if needed, but container size stays fixed */
-  flex: 1;
+  height: auto !important; /* Let content determine height */
+  min-height: 800px !important; /* Large minimum so all tabs are same size */
+  overflow: visible !important; /* NO scroll bars anywhere */
+  display: block !important; /* Remove flex */
 }
 
 /* Section Styles */
@@ -1045,9 +1046,12 @@ body {
     min-width: unset;
   }
   
-  /* MOBILE TAB HEIGHT FIXES - MUCH LARGER FIXED HEIGHTS */
+  /* MOBILE - NO SCROLL, LARGE FIXED MINIMUMS */
   .results-container {
-    height: 800px !important; /* Larger fixed height for mobile with !important */
+    height: auto !important; /* Let it grow naturally */
+    min-height: 900px !important; /* Large minimum */
+    overflow: visible !important; /* NO scroll */
+    display: block !important;
   }
   
   .results-header {
@@ -1067,8 +1071,10 @@ body {
   
   .tab-content {
     padding: 20px;
-    height: 550px !important; /* Larger fixed height for mobile with !important */
-    overflow-y: auto; /* Allow scroll if needed */
+    height: auto !important; /* Let content determine height */
+    min-height: 700px !important; /* Large minimum */
+    overflow: visible !important; /* NO scroll bars */
+    display: block !important;
   }
   
   .section {
@@ -1134,14 +1140,19 @@ body {
     grid-template-columns: 1fr;
   }
   
-  /* SMALLEST SCREEN TAB HEIGHT FIXES - LARGER FIXED HEIGHTS */
+  /* SMALLEST SCREENS - NO SCROLL, LARGE FIXED MINIMUMS */
   .results-container {
-    height: 750px !important; /* Larger fixed height for small screens with !important */
+    height: auto !important; /* Let it grow naturally */
+    min-height: 800px !important; /* Large minimum */
+    overflow: visible !important; /* NO scroll */
+    display: block !important;
   }
   
   .tab-content {
-    height: 500px !important; /* Larger fixed height for small screens with !important */
-    overflow-y: auto; /* Allow scroll if needed */
+    height: auto !important; /* Let content determine height */
+    min-height: 600px !important; /* Large minimum */
+    overflow: visible !important; /* NO scroll bars */
+    display: block !important;
   }
 }/* Complete App.css - Modern Slavery Assessment Tool with Enhanced Features */
 
