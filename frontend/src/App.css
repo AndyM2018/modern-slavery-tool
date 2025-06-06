@@ -77,11 +77,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px; /* Tighter spacing to match logo */
+  gap: 5px;
 }
 
 .company-logo {
-  height: 65px; /* Slightly adjusted for better proportion */
+  height: 65px;
   width: auto;
   max-width: 200px;
   object-fit: contain;
@@ -91,15 +91,15 @@ body {
 
 .company-name {
   color: white;
-  font-size: 1.75em; /* Slightly adjusted for better proportion */
-  font-weight: 400; /* Lighter weight to match logo */
+  font-size: 1.75em;
+  font-weight: 400;
   font-family: 'Avenir', 'Avenir Next', -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
-  opacity: 1; /* Full opacity like in logo */
-  letter-spacing: 0.02em; /* Slight letter spacing for cleaner look */
+  opacity: 1;
+  letter-spacing: 0.02em;
 }
 
-/* Second line: Main title (no shield) */
+/* Second line: Main title */
 .title-line {
   display: flex;
   align-items: center;
@@ -108,7 +108,7 @@ body {
 
 .main-title {
   color: white;
-  font-size: 2.4em; /* Larger than company name */
+  font-size: 2.4em;
   font-weight: 600;
   margin: 0;
   line-height: 1.2;
@@ -237,15 +237,13 @@ body {
   border: 1px solid #f5c6cb;
 }
 
-/* Results Container - LARGE FIXED HEIGHT, NO SCROLL ANYWHERE */
+/* Results Container - NO SCROLL, CONSISTENT SIZE */
 .results-container {
   background-color: #fff;
   border-radius: 16px;
-  overflow: visible !important; /* NO overflow control - show everything */
+  overflow: visible !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  height: auto !important; /* Let it grow naturally */
-  min-height: 1000px !important; /* Large minimum to prevent shrinking */
-  display: block !important; /* Remove flexbox that was causing issues */
+  min-height: 1000px !important;
 }
 
 .results-header {
@@ -257,7 +255,6 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
-  flex-shrink: 0; /* Prevents header from shrinking */
 }
 
 .results-header h2 {
@@ -332,7 +329,6 @@ body {
   border-bottom: 2px solid #e9ecef;
   background: #f8f9fa;
   margin: 0;
-  flex-shrink: 0; /* Prevents navigation from shrinking */
 }
 
 .tab-button {
@@ -359,13 +355,11 @@ body {
   background-color: white;
 }
 
-/* Tab Content - NO HEIGHT RESTRICTION, NO SCROLL */
+/* Tab Content - NO SCROLL, CONSISTENT HEIGHT */
 .tab-content {
   padding: 30px;
-  height: auto !important; /* Let content determine height */
-  min-height: 800px !important; /* Large minimum so all tabs are same size */
-  overflow: visible !important; /* NO scroll bars anywhere */
-  display: block !important; /* Remove flex */
+  min-height: 800px !important;
+  overflow: visible !important;
 }
 
 /* Section Styles */
@@ -729,15 +723,6 @@ body {
   font-size: 0.9em;
 }
 
-.risk-badge {
-  color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.8em;
-  font-weight: bold;
-  margin-left: 8px;
-}
-
 .map-legend {
   background: white;
   padding: 16px;
@@ -1006,15 +991,15 @@ body {
   
   .logo-line {
     flex-direction: column;
-    gap: 3px; /* Even tighter on mobile */
+    gap: 3px;
   }
   
   .company-logo {
-    height: 55px; /* Proportionally adjusted */
+    height: 55px;
   }
   
   .company-name {
-    font-size: 1.4em; /* Proportionally adjusted */
+    font-size: 1.4em;
   }
   
   .title-line {
@@ -1046,12 +1031,8 @@ body {
     min-width: unset;
   }
   
-  /* MOBILE - NO SCROLL, LARGE FIXED MINIMUMS */
   .results-container {
-    height: auto !important; /* Let it grow naturally */
-    min-height: 900px !important; /* Large minimum */
-    overflow: visible !important; /* NO scroll */
-    display: block !important;
+    min-height: 900px !important;
   }
   
   .results-header {
@@ -1071,10 +1052,8 @@ body {
   
   .tab-content {
     padding: 20px;
-    height: auto !important; /* Let content determine height */
-    min-height: 700px !important; /* Large minimum */
-    overflow: visible !important; /* NO scroll bars */
-    display: block !important;
+    min-height: 700px !important;
+    overflow: visible !important;
   }
   
   .section {
@@ -1111,11 +1090,11 @@ body {
 
 @media (max-width: 480px) {
   .company-logo {
-    height: 45px; /* Proportionally adjusted */
+    height: 45px;
   }
   
   .company-name {
-    font-size: 1.2em; /* Proportionally adjusted */
+    font-size: 1.2em;
   }
   
   .main-title {
@@ -1140,60 +1119,12 @@ body {
     grid-template-columns: 1fr;
   }
   
-  /* SMALLEST SCREENS - NO SCROLL, LARGE FIXED MINIMUMS */
   .results-container {
-    height: auto !important; /* Let it grow naturally */
-    min-height: 800px !important; /* Large minimum */
-    overflow: visible !important; /* NO scroll */
-    display: block !important;
+    min-height: 800px !important;
   }
   
   .tab-content {
-    height: auto !important; /* Let content determine height */
-    min-height: 600px !important; /* Large minimum */
-    overflow: visible !important; /* NO scroll bars */
-    display: block !important;
+    min-height: 600px !important;
+    overflow: visible !important;
   }
-}/* Complete App.css - Modern Slavery Assessment Tool with Enhanced Features */
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
 }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa;
-}
-
-.App {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
-  box-sizing: border-box;
-  max-width: 1200px;
-  margin: 0 auto;
-  flex: 1;
-}
-
-/* Header Styles */
-.header {
-  width: 100%;
-  max-width: 1200px;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 40px;
