@@ -435,239 +435,303 @@ function App() {
     setActiveTab('overview');
   };
 
-return (
-  <div className="App">
-    <div className="container">
-      <header className="header">
-        <div className="brand-section">
-          <div className="logo-line">
-            <img src="/rosetta-logo.png" alt="Rosetta Solutions Logo" className="company-logo" />
-            <h2 className="company-name">Rosetta Solutions</h2>
-          </div>
-          <div className="title-line">
-            <h1 className="main-title">Modern Slavery Risk Assessment</h1>
-          </div>
-          <p className="subtitle">AI-Powered Analysis | Industry Benchmarking | Global Supply Chain Mapping</p>
-        </div>
-      </header>
-        
-        <div className="assessment-section">
-          <form onSubmit={handleSubmit} className="assessment-form">
-            <div className="input-group">
-              <input
-                type="text"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="Enter company name (e.g., Apple, Nike, Walmart, Tesla)"
-                className="company-input"
-                disabled={loading}
-              />
-              <button 
-                type="submit" 
-                disabled={loading || !companyName.trim()}
-                className="assess-button"
-              >
-                {loading ? (
-                  <>
-                    <span className="spinner"></span>
-                    Analyzing...
-                  </>
-                ) : (
-                  'Assess Company'
-                )}
-              </button>
+  return (
+    <div className="App">
+      <div className="container">
+        <header className="header">
+          <div className="brand-section">
+            <div className="logo-line">
+              <img src="/rosetta-logo.png" alt="Rosetta Solutions Logo" className="company-logo" />
+              <h2 className="company-name">Rosetta Solutions</h2>
             </div>
-          </form>
-
-          {error && (
-            <div className="alert error">
-              <strong>Error:</strong> {error}
+            <div className="title-line">
+              <h1 className="main-title">Modern Slavery Risk Assessment</h1>
             </div>
-          )}
+            <p className="subtitle">AI-Powered Analysis | Industry Benchmarking | Global Supply Chain Mapping</p>
+          </div>
+        </header>
           
-          {results && (
-            <div className="results-container">
-              <div className="results-header">
-                <h2>Assessment Results for: {companyName}</h2>
-                <button onClick={clearResults} className="clear-button">
-                  New Assessment
+          <div className="assessment-section">
+            <form onSubmit={handleSubmit} className="assessment-form">
+              <div className="input-group">
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Enter company name (e.g., Apple, Nike, Walmart, Tesla)"
+                  className="company-input"
+                  disabled={loading}
+                />
+                <button 
+                  type="submit" 
+                  disabled={loading || !companyName.trim()}
+                  className="assess-button"
+                >
+                  {loading ? (
+                    <>
+                      <span className="spinner"></span>
+                      Analyzing...
+                    </>
+                  ) : (
+                    'Assess Company'
+                  )}
                 </button>
               </div>
-              
-              <div className="risk-overview">
-                <div className="risk-card">
-                  <h3>Overall Risk Level</h3>
-                  <div 
-                    className="risk-badge"
-                    style={{ backgroundColor: getRiskColor(results.overall_risk_level || results.risk_level) }}
+            </form>
+
+            {error && (
+              <div className="alert error">
+                <strong>Error:</strong> {error}
+              </div>
+            )}
+            
+            {results && (
+              <div className="results-container">
+                <div className="results-header">
+                  <h2>Assessment Results for: {companyName}</h2>
+                  <button onClick={clearResults} className="clear-button">
+                    New Assessment
+                  </button>
+                </div>
+                
+                <div className="risk-overview">
+                  <div className="risk-card">
+                    <h3>Overall Risk Level</h3>
+                    <div 
+                      className="risk-badge"
+                      style={{ backgroundColor: getRiskColor(results.overall_risk_level || results.risk_level) }}
+                    >
+                      {(results.overall_risk_level || results.risk_level || 'Unknown').toUpperCase()}
+                    </div>
+                  </div>
+                  
+                  <div className="risk-card">
+                    <h3>Risk Score</h3>
+                    <div className="risk-score">
+                      {results.overall_risk_score || results.risk_score || 'N/A'}
+                      <span className="score-max">/100</span>
+                    </div>
+                  </div>
+                  
+                  <div className="risk-card">
+                    <h3>Manufacturing Sites</h3>
+                    <div className="risk-score">
+                      {results.manufacturing_locations ? results.manufacturing_locations.length : 0}
+                    </div>
+                  </div>
+
+                  <div className="risk-card">
+                    <h3>Data Sources</h3>
+                    <div className="risk-score">
+                      {results.data_sources ? Object.values(results.data_sources).reduce((a, b) => a + b, 0) : 0}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tab Navigation */}
+                <div className="tab-navigation">
+                  <button 
+                    className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('overview')}
                   >
-                    {(results.overall_risk_level || results.risk_level || 'Unknown').toUpperCase()}
-                  </div>
-                </div>
-                
-                <div className="risk-card">
-                  <h3>Risk Score</h3>
-                  <div className="risk-score">
-                    {results.overall_risk_score || results.risk_score || 'N/A'}
-                    <span className="score-max">/100</span>
-                  </div>
-                </div>
-                
-                <div className="risk-card">
-                  <h3>Manufacturing Sites</h3>
-                  <div className="risk-score">
-                    {results.manufacturing_locations ? results.manufacturing_locations.length : 0}
-                  </div>
+                    Overview
+                  </button>
+                  <button 
+                    className={`tab-button ${activeTab === 'benchmarking' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('benchmarking')}
+                  >
+                    Industry Benchmarking
+                  </button>
+                  <button 
+                    className={`tab-button ${activeTab === 'mapping' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('mapping')}
+                  >
+                    Global Mapping
+                  </button>
+                  <button 
+                    className={`tab-button ${activeTab === 'enhanced' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('enhanced')}
+                  >
+                    Enhanced Data
+                  </button>
                 </div>
 
-                <div className="risk-card">
-                  <h3>Data Sources</h3>
-                  <div className="risk-score">
-                    {results.data_sources ? Object.values(results.data_sources).reduce((a, b) => a + b, 0) : 0}
-                  </div>
-                </div>
-              </div>
-
-              {/* Tab Navigation */}
-              <div className="tab-navigation">
-                <button 
-                  className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('overview')}
-                >
-                  Overview
-                </button>
-                <button 
-                  className={`tab-button ${activeTab === 'benchmarking' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('benchmarking')}
-                >
-                  Industry Benchmarking
-                </button>
-                <button 
-                  className={`tab-button ${activeTab === 'mapping' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('mapping')}
-                >
-                  Global Mapping
-                </button>
-                <button 
-                  className={`tab-button ${activeTab === 'enhanced' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('enhanced')}
-                >
-                  Enhanced Data
-                </button>
-              </div>
-
-              {/* Tab Content */}
-              <div className="tab-content">
-                {activeTab === 'overview' && (
-                  <>
-                    {results.key_findings && results.key_findings.length > 0 && (
-                      <div className="section">
-                        <h3>🔍 Key Findings</h3>
-                        <ul className="findings-list">
-                          {results.key_findings.map((finding, index) => (
-                            <li key={index} className="finding-item">
-                              <span className="finding-text">
-                                {typeof finding === 'string' ? finding : finding.description}
-                              </span>
-                              {finding.severity && (
-                                <span className={`severity-badge ${finding.severity}`}>
-                                  {finding.severity.toUpperCase()}
+                {/* Tab Content - CONSISTENT STRUCTURE FOR ALL TABS */}
+                <div className="tab-content">
+                  {activeTab === 'overview' && (
+                    <div className="tab-content-wrapper">
+                      {results.key_findings && results.key_findings.length > 0 && (
+                        <div className="section">
+                          <h3>🔍 Key Findings</h3>
+                          <ul className="findings-list">
+                            {results.key_findings.map((finding, index) => (
+                              <li key={index} className="finding-item">
+                                <span className="finding-text">
+                                  {typeof finding === 'string' ? finding : finding.description}
                                 </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {results.recommendations && results.recommendations.length > 0 && (
-                      <div className="section">
-                        <h3>💡 Recommendations</h3>
-                        <ul className="recommendations-list">
-                          {results.recommendations.map((rec, index) => (
-                            <li key={index} className="recommendation-item">
-                              <span className="rec-text">
-                                {typeof rec === 'string' ? rec : rec.description || rec.title}
-                              </span>
-                              {rec.priority && (
-                                <span className={`priority-badge ${rec.priority}`}>
-                                  {rec.priority.toUpperCase()} PRIORITY
+                                {finding.severity && (
+                                  <span className={`severity-badge ${finding.severity}`}>
+                                    {finding.severity.toUpperCase()}
+                                  </span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {results.recommendations && results.recommendations.length > 0 && (
+                        <div className="section">
+                          <h3>💡 Recommendations</h3>
+                          <ul className="recommendations-list">
+                            {results.recommendations.map((rec, index) => (
+                              <li key={index} className="recommendation-item">
+                                <span className="rec-text">
+                                  {typeof rec === 'string' ? rec : rec.description || rec.title}
                                 </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                                {rec.priority && (
+                                  <span className={`priority-badge ${rec.priority}`}>
+                                    {rec.priority.toUpperCase()} PRIORITY
+                                  </span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
 
-                    {results.risk_factors && results.risk_factors.length > 0 && (
-                      <div className="section">
-                        <h3>⚠️ Risk Factors</h3>
-                        <div className="space-y-4">
-                          {results.risk_factors.map((riskFactor, index) => (
-                            <div key={index} className="finding-item">
-                              <div className="finding-text">
-                                <strong>{riskFactor.factor}</strong>
-                                <div style={{fontSize: '0.9rem', color: '#666', marginTop: '8px'}}>
-                                  <strong>Impact:</strong> <span className={`severity-badge ${riskFactor.impact}`}>{riskFactor.impact?.toUpperCase()}</span>
-                                </div>
-                                <div style={{fontSize: '0.9rem', color: '#555', marginTop: '5px'}}>
-                                  <strong>Evidence:</strong> {riskFactor.evidence}
+                      {results.risk_factors && results.risk_factors.length > 0 && (
+                        <div className="section">
+                          <h3>⚠️ Risk Factors</h3>
+                          <div className="space-y-4">
+                            {results.risk_factors.map((riskFactor, index) => (
+                              <div key={index} className="finding-item">
+                                <div className="finding-text">
+                                  <strong>{riskFactor.factor}</strong>
+                                  <div style={{fontSize: '0.9rem', color: '#666', marginTop: '8px'}}>
+                                    <strong>Impact:</strong> <span className={`severity-badge ${riskFactor.impact}`}>{riskFactor.impact?.toUpperCase()}</span>
+                                  </div>
+                                  <div style={{fontSize: '0.9rem', color: '#555', marginTop: '5px'}}>
+                                    <strong>Evidence:</strong> {riskFactor.evidence}
+                                  </div>
                                 </div>
                               </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Assessment Details - NOW INSIDE OVERVIEW TAB */}
+                      <div className="section">
+                        <h3>📊 Assessment Details</h3>
+                        <div className="details-grid">
+                          <div className="detail-item">
+                            <strong>Assessment Type:</strong> Comprehensive with Benchmarking & Mapping
+                          </div>
+                          <div className="detail-item">
+                            <strong>Date:</strong> {results.assessment_date || new Date().toLocaleDateString()}
+                          </div>
+                          <div className="detail-item">
+                            <strong>Confidence Level:</strong> {results.confidence_level || 'High'}
+                          </div>
+                          {results.assessment_id && (
+                            <div className="detail-item">
+                              <strong>Assessment ID:</strong> {results.assessment_id}
                             </div>
-                          ))}
+                          )}
                         </div>
                       </div>
-                    )}
-                  </>
-                )}
+                    </div>
+                  )}
 
-                {activeTab === 'benchmarking' && (
-                  <IndustryBenchmarking benchmarkData={results.industry_benchmarking} />
-                )}
+                  {activeTab === 'benchmarking' && (
+                    <div className="tab-content-wrapper">
+                      <IndustryBenchmarking benchmarkData={results.industry_benchmarking} />
+                      
+                      {/* Consistent footer section for this tab */}
+                      <div className="section">
+                        <h3>📊 Assessment Details</h3>
+                        <div className="details-grid">
+                          <div className="detail-item">
+                            <strong>Benchmarking Source:</strong> Industry Database
+                          </div>
+                          <div className="detail-item">
+                            <strong>Peer Companies:</strong> {results.industry_benchmarking?.peer_companies?.length || 0} analyzed
+                          </div>
+                          <div className="detail-item">
+                            <strong>Data Quality:</strong> {results.industry_benchmarking?.data_quality || 'High'}
+                          </div>
+                          <div className="detail-item">
+                            <strong>Last Updated:</strong> {results.industry_benchmarking?.last_updated || new Date().toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                {activeTab === 'mapping' && (
-                  <ManufacturingMap 
-                    mapData={results.supply_chain_map} 
-                    locations={results.manufacturing_locations} 
-                  />
-                )}
+                  {activeTab === 'mapping' && (
+                    <div className="tab-content-wrapper">
+                      <ManufacturingMap 
+                        mapData={results.supply_chain_map} 
+                        locations={results.manufacturing_locations} 
+                      />
+                      
+                      {/* Consistent footer section for this tab */}
+                      <div className="section">
+                        <h3>📊 Assessment Details</h3>
+                        <div className="details-grid">
+                          <div className="detail-item">
+                            <strong>Locations Mapped:</strong> {results.manufacturing_locations?.length || 0}
+                          </div>
+                          <div className="detail-item">
+                            <strong>Coverage:</strong> Global Supply Chain
+                          </div>
+                          <div className="detail-item">
+                            <strong>Risk Assessment:</strong> Country-level analysis
+                          </div>
+                          <div className="detail-item">
+                            <strong>Map Data:</strong> OpenStreetMap
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                {activeTab === 'enhanced' && (
-                  <EnhancedDataSources enhancedData={results.enhanced_data} />
-                )}
-              </div>
-
-              <div className="section">
-                <h3>📊 Assessment Details</h3>
-                <div className="details-grid">
-                  <div className="detail-item">
-                    <strong>Assessment Type:</strong> Comprehensive with Benchmarking & Mapping
-                  </div>
-                  <div className="detail-item">
-                    <strong>Date:</strong> {results.assessment_date || new Date().toLocaleDateString()}
-                  </div>
-                  <div className="detail-item">
-                    <strong>Confidence Level:</strong> {results.confidence_level || 'High'}
-                  </div>
-                  {results.assessment_id && (
-                    <div className="detail-item">
-                      <strong>Assessment ID:</strong> {results.assessment_id}
+                  {activeTab === 'enhanced' && (
+                    <div className="tab-content-wrapper">
+                      <EnhancedDataSources enhancedData={results.enhanced_data} />
+                      
+                      {/* Consistent footer section for this tab */}
+                      <div className="section">
+                        <h3>📊 Assessment Details</h3>
+                        <div className="details-grid">
+                          <div className="detail-item">
+                            <strong>Data Sources:</strong> {results.enhanced_data?.data_sources_used?.length || 0} external APIs
+                          </div>
+                          <div className="detail-item">
+                            <strong>News Articles:</strong> {results.enhanced_data?.enhanced_news?.length || 0} analyzed
+                          </div>
+                          <div className="detail-item">
+                            <strong>Economic Indicators:</strong> {Object.keys(results.enhanced_data?.economic_indicators || {}).length} countries
+                          </div>
+                          <div className="detail-item">
+                            <strong>Analysis Depth:</strong> Enhanced AI Processing
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+          
+          <footer className="footer">
+            <p>© 2025 Rosetta Solutions. This tool provides risk assessment guidance using AI analysis, industry benchmarking, and global mapping. Professional legal advice should be sought for specific situations.</p>
+          </footer>
         </div>
-        
-        <footer className="footer">
-          <p>© 2025 Rosetta Solutions. This tool provides risk assessment guidance using AI analysis, industry benchmarking, and global mapping. Professional legal advice should be sought for specific situations.</p>
-        </footer>
       </div>
-    </div>
-  );
+    );
 }
 
 export default App;
