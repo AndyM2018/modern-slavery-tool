@@ -1,4 +1,4 @@
-/* Complete App.css - Modern Slavery Assessment Tool with Enhanced Features */
+/* Complete App.css - Modern Slavery Assessment Tool with Enhanced Features - FIXED WIDTH */
 
 * {
   margin: 0;
@@ -237,7 +237,7 @@ body {
   border: 1px solid #f5c6cb;
 }
 
-/* Results Container */
+/* Results Container - FIXED WIDTH */
 .results-container {
   background-color: #fff;
   border-radius: 16px;
@@ -246,6 +246,9 @@ body {
   min-height: 900px;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 1200px;
+  min-width: 1000px;
 }
 
 .results-header {
@@ -357,14 +360,14 @@ body {
   background-color: white;
 }
 
+/* Tab Content - FIXED WIDTH */
 .tab-content {
   padding: 30px;
   flex: 1;
   overflow-y: auto;
   box-sizing: border-box;
   width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
+  min-width: 940px;
 }
 
 /* Section Styles */
@@ -1053,6 +1056,7 @@ body {
   
   .tab-content {
     padding: 20px;
+    min-width: unset;
   }
   
   .section {
@@ -1084,6 +1088,10 @@ body {
   
   .location-details-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .results-container {
+    min-width: unset;
   }
 }
 
