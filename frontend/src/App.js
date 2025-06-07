@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -268,23 +268,6 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
 // Manufacturing Map Component
 const ManufacturingMap = ({ mapData, locations }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
-  const [hoveredLocation, setHoveredLocation] = useState(null);
-  const mapRef = useRef(null);
-  const markersRef = useRef([]);
-
-  // Effect to handle hover popup opening/closing
-  useEffect(() => {
-    if (hoveredLocation && mapRef.current) {
-      // Find the marker for the hovered location and open its popup
-      const marker = markersRef.current.find(m => 
-        m.location.city === hoveredLocation.city && 
-        m.location.country === hoveredLocation.country
-      );
-      if (marker && marker.markerRef) {
-        marker.markerRef.openPopup();
-      }
-    }
-  }, [hoveredLocation]);
 
   if (!locations || locations.length === 0) {
     return (
