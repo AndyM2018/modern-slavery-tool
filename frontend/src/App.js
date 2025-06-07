@@ -12,6 +12,12 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Helper function to capitalize first letter
+const capitalizeFirst = (str) => {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
 // Export functionality
 const exportToExcel = (results, companyName) => {
   // Create workbook data
@@ -152,6 +158,97 @@ const exportToExcel = (results, companyName) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+};
+
+// UPDATED: Risk Factors Grouped Component
+const RiskFactorsGrouped = ({ riskFactors }) => {
+  if (!riskFactors || riskFactors.length === 0) return null;
+
+  // Group risk factors by category
+  const groupRiskFactors = (factors) => {
+    const groups = {
+      operational: [],
+      geographic: [],
+      governance: [],
+      business_model: []
+    };
+
+    factors.forEach(factor => {
+      const factorText = factor.factor || factor;
+      const lowerText = factorText.toLowerCase();
+
+      // Categorize based on keywords
+      if (lowerText.includes('supply chain') || 
+          lowerText.includes('manufacturing') || 
+          lowerText.includes('labor') || 
+          lowerText.includes('worker') || 
+          lowerText.includes('operational') ||
+          lowerText.includes('production')) {
+        groups.operational.push(factor);
+      } else if (lowerText.includes('country') || 
+                 lowerText.includes('geographic') || 
+                 lowerText.includes('gdp') || 
+                 lowerText.includes('economic') ||
+                 lowerText.includes('region')) {
+        groups.geographic.push(factor);
+      } else if (lowerText.includes('policy') || 
+                 lowerText.includes('governance') || 
+                 lowerText.includes('compliance') || 
+                 lowerText.includes('transparency') ||
+                 lowerText.includes('audit') ||
+                 lowerText.includes('reporting')) {
+        groups.governance.push(factor);
+      } else {
+        // Default to business model risks
+        groups.business_model.push(factor);
+      }
+    });
+
+    return groups;
+  };
+
+  const groupedFactors = groupRiskFactors(riskFactors);
+
+  const renderRiskGroup = (title, icon, factors, groupKey) => {
+    if (factors.length === 0) return null;
+
+    return (
+      <div key={groupKey} className="risk-group">
+        <h5 className="risk-group-title">
+          {icon} {title}
+        </h5>
+        <div className="risk-group-items">
+          {factors.map((riskFactor, index) => (
+            <div key={index} className="finding-item">
+              <div className="finding-text">
+                <strong>{riskFactor.factor}</strong>
+                <div style={{fontSize: '0.9rem', color: '#666', marginTop: '8px'}}>
+                  <strong>Impact:</strong> <span className={`severity-badge ${riskFactor.impact}`}>
+                    {riskFactor.impact?.toUpperCase()}
+                  </span>
+                </div>
+                <div style={{fontSize: '0.9rem', color: '#555', marginTop: '5px'}}>
+                  <strong>Evidence:</strong> {riskFactor.evidence}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="section">
+      <h3>⚠️ Risk Factors</h3>
+      <div className="risk-groups-container">
+        {renderRiskGroup("Operational Risks", "🏭", groupedFactors.operational, "operational")}
+        {renderRiskGroup("Geographic Risks", "🌍", groupedFactors.geographic, "geographic")}
+        {renderRiskGroup("Governance Risks", "📋", groupedFactors.governance, "governance")}
+        {renderRiskGroup("Business Model Risks", "💼", groupedFactors.business_model, "business_model")}
+      </div>
+    </div>
+  );
 };
 
 // Industry Benchmarking Component
@@ -413,7 +510,6 @@ const ManufacturingMap = ({ mapData, locations }) => {
         </div>
       </div>
 
-      {/* FIXED: Better positioned location details */}
       {selectedLocation && (
         <div className="selected-location-details-fixed">
           <div className="location-details-header">
@@ -438,121 +534,138 @@ const ManufacturingMap = ({ mapData, locations }) => {
   );
 };
 
-  // Helper function to capitalize first letter
-  const capitalizeFirst = (str) => {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  };
-
-// Enhanced Data Sources Component
+// UPDATED: Enhanced Data Sources Component
 const EnhancedDataSources = ({ enhancedData }) => {
   // Debug logging to see what we're getting
-  console.log("Enhanced Data received:", enhancedData);
-  console.log("Enhanced Data type:", typeof enhancedData);
-  console.log("Enhanced Data keys:", enhancedData ? Object.keys(enhancedData) : "No data");
+  console.log("🔍 Enhanced Data Analysis:");
+  console.log("  - Raw data:", enhancedData);
+  console.log("  - Type:", typeof enhancedData);
+  console.log("  - Keys:", enhancedData ? Object.keys(enhancedData) : "No data");
 
   if (!enhancedData) {
-    console.log("No enhanced data - component returning null");
     return (
       <div className="section enhanced-data">
         <h3>🔍 Enhanced Data Analysis</h3>
-        <div className="no-data">No enhanced data received from backend</div>
+        <div className="no-data">
+          <p>⚠️ No enhanced data received from backend</p>
+          <small>This could be due to API rate limits or data availability</small>
+        </div>
       </div>
     );
   }
+
+  // Safe data extraction with fallbacks
+  const economicData = enhancedData.economic_indicators || {};
+  const newsData = enhancedData.enhanced_news || [];
+  const dataSources = enhancedData.data_sources_used || [];
+  const apiRiskFactors = enhancedData.api_risk_factors || [];
+
+  // Data availability checks
+  const hasEconomicData = Object.keys(economicData).length > 0;
+  const hasNewsData = Array.isArray(newsData) && newsData.length > 0;
+  const hasDataSources = Array.isArray(dataSources) && dataSources.length > 0;
+  const hasApiRiskFactors = Array.isArray(apiRiskFactors) && apiRiskFactors.length > 0;
+
+  console.log("🔍 Data availability:", {
+    hasEconomicData,
+    hasNewsData, 
+    hasDataSources,
+    hasApiRiskFactors,
+    economicDataCount: Object.keys(economicData).length,
+    newsDataCount: newsData.length
+  });
 
   return (
     <div className="section enhanced-data">
       <h3>🔍 Enhanced Data Analysis</h3>
       
       <div className="data-sources-grid">
+        {/* UPDATED: Economic Indicators with improved formatting */}
         <div className="data-source-item">
           <h5>📊 Economic Indicators</h5>
-          {enhancedData.economic_indicators && Object.keys(enhancedData.economic_indicators).length > 0 ? (
+          {hasEconomicData ? (
             <div className="economic-data">
-              {Object.entries(enhancedData.economic_indicators).map(([country, data]) => (
+              {Object.entries(economicData).map(([country, data]) => (
                 <div key={country} className="country-economic-data">
-                  <strong>{country}:</strong> GDP per capita ${data.gdp_per_capita?.toLocaleString()} 
-                  <span className={`risk-indicator ${data.economic_risk_factor}`}>
-                    ({data.economic_risk_factor} economic risk)
+                  <strong>{country}:</strong> GDP per capita ${data.gdp_per_capita?.toLocaleString() || 'N/A'}
+                  <br />
+                  <span className={`risk-indicator ${data.economic_risk_factor || 'unknown'}`}>
+                    Economic Risk: {capitalizeFirst(data.economic_risk_factor || 'Unknown')}
                   </span>
+                  {data.year && (
+                    <>
+                      <br />
+                      <small style={{color: '#666'}}>Year: {data.year}</small>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
           ) : (
             <div className="no-data">
-              No economic data available
-              <br />
+              <p>No economic data available</p>
               <small style={{color: '#999', fontSize: '0.8em'}}>
-                Debug: {enhancedData.economic_indicators ? 
-                  `Found economic_indicators but empty: ${JSON.stringify(enhancedData.economic_indicators)}` : 
-                  'No economic_indicators property found'}
+                Debug: economic_indicators type = {typeof enhancedData.economic_indicators}, 
+                keys = {enhancedData.economic_indicators ? Object.keys(enhancedData.economic_indicators).length : 0}
               </small>
             </div>
           )}
         </div>
 
+        {/* UPDATED: Enhanced News with "coming soon" message */}
         <div className="data-source-item">
           <h5>📰 Enhanced News Analysis</h5>
-          {enhancedData.enhanced_news && enhancedData.enhanced_news.length > 0 ? (
-            <div className="news-analysis">
-              <p>Found {enhancedData.enhanced_news.length} relevant news articles</p>
-              <div className="news-items">
-                {enhancedData.enhanced_news.slice(0, 3).map((article, index) => (
-                  <div key={index} className="news-item">
-                    <a href={article.url} target="_blank" rel="noopener noreferrer">
-                      {article.title}
-                    </a>
-                    <small>Source: {article.domain} | Tone: {article.tone}</small>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="no-data">
-              No enhanced news data available
-              <br />
-              <small style={{color: '#999', fontSize: '0.8em'}}>
-                Debug: {enhancedData.enhanced_news ? 
-                  `Found enhanced_news but length: ${enhancedData.enhanced_news.length}` : 
-                  'No enhanced_news property found'}
-              </small>
-            </div>
-          )}
+          <div className="news-coming-soon">
+            <p style={{
+              color: '#666', 
+              fontStyle: 'italic',
+              textAlign: 'center',
+              padding: '20px',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '4px',
+              border: '1px dashed #ddd'
+            }}>
+              📰 Enhanced news analysis coming soon
+            </p>
+            <small style={{color: '#999', fontSize: '0.8em', textAlign: 'center', display: 'block', marginTop: '8px'}}>
+              We're working on integrating premium news sources for more comprehensive labor rights coverage
+            </small>
+          </div>
         </div>
 
+        {/* Data Sources */}
         <div className="data-source-item">
           <h5>🔗 Data Sources Used</h5>
-          {enhancedData.data_sources_used && enhancedData.data_sources_used.length > 0 ? (
+          {hasDataSources ? (
             <ul className="data-sources-list">
-              {enhancedData.data_sources_used.map((source, index) => (
+              {dataSources.map((source, index) => (
                 <li key={index}>{source}</li>
               ))}
             </ul>
           ) : (
             <div className="no-data">
-              No data sources information available
-              <br />
+              <p>No data sources information available</p>
               <small style={{color: '#999', fontSize: '0.8em'}}>
-                Debug: {enhancedData.data_sources_used ? 
-                  `Found data_sources_used but length: ${enhancedData.data_sources_used.length}` : 
-                  'No data_sources_used property found'}
+                Debug: data_sources_used type = {typeof enhancedData.data_sources_used}, 
+                isArray = {Array.isArray(enhancedData.data_sources_used)}, 
+                length = {enhancedData.data_sources_used?.length || 0}
               </small>
             </div>
           )}
         </div>
       </div>
 
-      {enhancedData.api_risk_factors && enhancedData.api_risk_factors.length > 0 && (
+      {/* API Risk Factors */}
+      {hasApiRiskFactors && (
         <div className="api-risk-factors">
           <h5>⚠️ Additional Risk Factors from External Data</h5>
           <div className="api-factors-grid">
-            {enhancedData.api_risk_factors.map((factor, index) => (
+            {apiRiskFactors.map((factor, index) => (
               <div key={index} className="api-risk-factor">
                 <div className="factor-header">
                   <strong>{factor.factor}</strong>
-                  <span className={`impact-badge ${factor.impact}`}>
-                    {factor.impact.toUpperCase()} IMPACT
+                  <span className={`impact-badge ${factor.impact || 'unknown'}`}>
+                    {(factor.impact || 'unknown').toUpperCase()} IMPACT
                   </span>
                 </div>
                 <div className="factor-evidence">{factor.evidence}</div>
@@ -561,6 +674,14 @@ const EnhancedDataSources = ({ enhancedData }) => {
           </div>
         </div>
       )}
+
+      {/* Debug Section - Remove in production */}
+      <details style={{marginTop: '20px', fontSize: '12px', color: '#666'}}>
+        <summary style={{cursor: 'pointer'}}>🔧 Debug: Raw Data Structure</summary>
+        <pre style={{background: '#f8f9fa', padding: '10px', borderRadius: '4px', overflow: 'auto', maxHeight: '200px'}}>
+          {JSON.stringify(enhancedData, null, 2)}
+        </pre>
+      </details>
     </div>
   );
 };
@@ -820,25 +941,9 @@ function App() {
                         </div>
                       )}
 
+                      {/* UPDATED: Use the new grouped risk factors component */}
                       {results.risk_factors && results.risk_factors.length > 0 && (
-                        <div className="section">
-                          <h3>⚠️ Risk Factors</h3>
-                          <div className="space-y-4">
-                            {results.risk_factors.map((riskFactor, index) => (
-                              <div key={index} className="finding-item">
-                                <div className="finding-text">
-                                  <strong>{riskFactor.factor}</strong>
-                                  <div style={{fontSize: '0.9rem', color: '#666', marginTop: '8px'}}>
-                                    <strong>Impact:</strong> <span className={`severity-badge ${riskFactor.impact}`}>{riskFactor.impact?.toUpperCase()}</span>
-                                  </div>
-                                  <div style={{fontSize: '0.9rem', color: '#555', marginTop: '5px'}}>
-                                    <strong>Evidence:</strong> {riskFactor.evidence}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                        <RiskFactorsGrouped riskFactors={results.risk_factors} />
                       )}
                       
                       <div className="section">
@@ -925,7 +1030,7 @@ function App() {
                             <strong>Data Sources:</strong> {results.enhanced_data?.data_sources_used?.length || 0} external APIs
                           </div>
                           <div className="detail-item">
-                            <strong>News Articles:</strong> {results.enhanced_data?.enhanced_news?.length || 0} analyzed
+                            <strong>News Articles:</strong> Enhanced analysis coming soon
                           </div>
                           <div className="detail-item">
                             <strong>Economic Indicators:</strong> {Object.keys(results.enhanced_data?.economic_indicators || {}).length} countries
