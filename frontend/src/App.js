@@ -12,6 +12,148 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Export functionality
+const exportToExcel = (results, companyName) => {
+  // Create workbook data
+  const workbookData = [];
+
+  // Overview Sheet
+  const overviewData = [
+    ['Modern Slavery Risk Assessment - Overview'],
+    ['Company:', companyName],
+    ['Assessment Date:', results.assessment_date || new Date().toLocaleDateString()],
+    ['Overall Risk Level:', results.overall_risk_level || results.risk_level || 'Unknown'],
+    ['Risk Score:', `${results.overall_risk_score || results.risk_score || 'N/A'}/100`],
+    ['Manufacturing Sites:', results.manufacturing_locations ? results.manufacturing_locations.length : 0],
+    ['Data Sources:', results.data_sources ? Object.values(results.data_sources).reduce((a, b) => a + b, 0) : 0],
+    [''],
+    ['Key Findings:'],
+  ];
+
+  if (results.key_findings && results.key_findings.length > 0) {
+    results.key_findings.forEach((finding, index) => {
+      const findingText = typeof finding === 'string' ? finding : finding.description;
+      const severity = finding.severity || '';
+      overviewData.push([`${index + 1}.`, findingText, severity]);
+    });
+  }
+
+  overviewData.push([''], ['Risk Factors:']);
+  if (results.risk_factors && results.risk_factors.length > 0) {
+    results.risk_factors.forEach((factor, index) => {
+      overviewData.push([`${index + 1}.`, factor.factor, factor.impact || '', factor.evidence || '']);
+    });
+  }
+
+  overviewData.push([''], ['Recommendations:']);
+  if (results.recommendations && results.recommendations.length > 0) {
+    results.recommendations.forEach((rec, index) => {
+      const recText = typeof rec === 'string' ? rec : rec.description || rec.title;
+      const priority = rec.priority || '';
+      overviewData.push([`${index + 1}.`, recText, priority]);
+    });
+  }
+
+  workbookData.push({ name: 'Overview', data: overviewData });
+
+  // Industry Benchmarking Sheet
+  if (results.industry_benchmarking) {
+    const benchData = [
+      ['Industry Benchmarking'],
+      ['Industry:', results.industry_benchmarking.matched_industry || ''],
+      ['Company Score:', results.industry_benchmarking.company_score || ''],
+      ['Industry Average:', results.industry_benchmarking.industry_average_score || ''],
+      ['Performance vs Peers:', results.industry_benchmarking.performance_vs_peers || ''],
+      [''],
+      ['Peer Companies:'],
+    ];
+
+    if (results.industry_benchmarking.peer_companies) {
+      results.industry_benchmarking.peer_companies.forEach((company, index) => {
+        benchData.push([`${index + 1}.`, company]);
+      });
+    }
+
+    benchData.push([''], ['Common Industry Risks:']);
+    if (results.industry_benchmarking.industry_common_risks) {
+      results.industry_benchmarking.industry_common_risks.forEach((risk, index) => {
+        benchData.push([`${index + 1}.`, risk]);
+      });
+    }
+
+    workbookData.push({ name: 'Industry Benchmarking', data: benchData });
+  }
+
+  // Manufacturing Locations Sheet
+  if (results.manufacturing_locations && results.manufacturing_locations.length > 0) {
+    const locationData = [
+      ['Manufacturing Locations'],
+      ['City', 'Country', 'Facility Type', 'Products', 'Risk Level', 'Risk Score', 'Latitude', 'Longitude'],
+    ];
+
+    results.manufacturing_locations.forEach(location => {
+      locationData.push([
+        location.city || '',
+        location.country || '',
+        location.facility_type || '',
+        location.products || '',
+        location.country_risk_level || '',
+        location.country_risk_score || '',
+        location.coordinates?.lat || '',
+        location.coordinates?.lng || '',
+      ]);
+    });
+
+    workbookData.push({ name: 'Manufacturing Locations', data: locationData });
+  }
+
+  // Enhanced Data Sheet
+  if (results.enhanced_data) {
+    const enhancedData = [
+      ['Enhanced Data Analysis'],
+      [''],
+      ['Economic Indicators:'],
+    ];
+
+    if (results.enhanced_data.economic_indicators) {
+      Object.entries(results.enhanced_data.economic_indicators).forEach(([country, data]) => {
+        enhancedData.push([
+          country,
+          `GDP per capita: $${data.gdp_per_capita?.toLocaleString() || 'N/A'}`,
+          `Economic risk: ${data.economic_risk_factor || 'N/A'}`
+        ]);
+      });
+    }
+
+    enhancedData.push([''], ['Data Sources Used:']);
+    if (results.enhanced_data.data_sources_used) {
+      results.enhanced_data.data_sources_used.forEach((source, index) => {
+        enhancedData.push([`${index + 1}.`, source]);
+      });
+    }
+
+    workbookData.push({ name: 'Enhanced Data', data: enhancedData });
+  }
+
+  // Convert to CSV format and download
+  const csvContent = workbookData.map(sheet => {
+    const csvData = sheet.data.map(row => 
+      row.map(cell => `"${cell}"`).join(',')
+    ).join('\n');
+    return `Sheet: ${sheet.name}\n${csvData}\n\n`;
+  }).join('');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${companyName}_Modern_Slavery_Assessment.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 // Industry Benchmarking Component
 const IndustryBenchmarking = ({ benchmarkData }) => {
   if (!benchmarkData) return null;
@@ -190,7 +332,7 @@ const ManufacturingMap = ({ mapData, locations }) => {
             </div>
             <div className="stat-item medium-risk">
               <span className="stat-number">{mapData.risk_summary?.medium_risk_sites || 0}</span>
-              <span className="stat-label">Low Risk</span>
+              <span className="stat-label">Medium Risk</span>
             </div>
             <div className="stat-item low-risk">
               <span className="stat-number">{mapData.risk_summary?.low_risk_sites || 0}</span>
@@ -261,9 +403,19 @@ const ManufacturingMap = ({ mapData, locations }) => {
         </div>
       </div>
 
+      {/* FIXED: Better positioned location details */}
       {selectedLocation && (
-        <div className="selected-location-details">
-          <h5>Selected Location Details:</h5>
+        <div className="selected-location-details-fixed">
+          <div className="location-details-header">
+            <h5>Selected Location Details</h5>
+            <button 
+              className="close-details-btn"
+              onClick={() => setSelectedLocation(null)}
+              aria-label="Close details"
+            >
+              ×
+            </button>
+          </div>
           <div className="location-details-grid">
             <div><strong>Location:</strong> {selectedLocation.city}, {selectedLocation.country}</div>
             <div><strong>Facility Type:</strong> {selectedLocation.facility_type}</div>
@@ -435,6 +587,12 @@ function App() {
     setActiveTab('overview');
   };
 
+  const handleExport = () => {
+    if (results) {
+      exportToExcel(results, companyName);
+    }
+  };
+
   return (
     <div className="App">
       <div className="container">
@@ -489,9 +647,14 @@ function App() {
               <div className="results-container">
                 <div className="results-header">
                   <h2>Assessment Results for: {companyName}</h2>
-                  <button onClick={clearResults} className="clear-button">
-                    New Assessment
-                  </button>
+                  <div className="header-buttons">
+                    <button onClick={handleExport} className="export-button">
+                      📊 Export Data
+                    </button>
+                    <button onClick={clearResults} className="clear-button">
+                      New Assessment
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="risk-overview">
@@ -556,7 +719,7 @@ function App() {
                   </button>
                 </div>
 
-                {/* FIXED: Removed nested container div */}
+                {/* Tab Content */}
                 <div className="tab-content">
                   {activeTab === 'overview' && (
                     <>
