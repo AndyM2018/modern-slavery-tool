@@ -229,7 +229,7 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
             <h5>⚠️ Common Industry Risks</h5>
             <ul className="industry-risks">
               {benchmarkData.industry_common_risks?.slice(0, 4).map((risk, index) => (
-                <li key={index}>{risk}</li>
+                <li key={index}>{capitalizeFirst(risk)}</li>
               ))}
             </ul>
           </div>
@@ -238,7 +238,7 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
             <h5>✅ Industry Best Practices</h5>
             <ul className="best-practices">
               {benchmarkData.industry_best_practices?.slice(0, 4).map((practice, index) => (
-                <li key={index}>{practice}</li>
+                <li key={index}>{capitalizeFirst(practice)}</li>
               ))}
             </ul>
           </div>
