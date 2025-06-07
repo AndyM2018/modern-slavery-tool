@@ -446,7 +446,20 @@ const ManufacturingMap = ({ mapData, locations }) => {
 
 // Enhanced Data Sources Component
 const EnhancedDataSources = ({ enhancedData }) => {
-  if (!enhancedData) return null;
+  // Debug logging to see what we're getting
+  console.log("Enhanced Data received:", enhancedData);
+  console.log("Enhanced Data type:", typeof enhancedData);
+  console.log("Enhanced Data keys:", enhancedData ? Object.keys(enhancedData) : "No data");
+
+  if (!enhancedData) {
+    console.log("No enhanced data - component returning null");
+    return (
+      <div className="section enhanced-data">
+        <h3>🔍 Enhanced Data Analysis</h3>
+        <div className="no-data">No enhanced data received from backend</div>
+      </div>
+    );
+  }
 
   return (
     <div className="section enhanced-data">
@@ -467,7 +480,15 @@ const EnhancedDataSources = ({ enhancedData }) => {
               ))}
             </div>
           ) : (
-            <div className="no-data">No economic data available</div>
+            <div className="no-data">
+              No economic data available
+              <br />
+              <small style={{color: '#999', fontSize: '0.8em'}}>
+                Debug: {enhancedData.economic_indicators ? 
+                  `Found economic_indicators but empty: ${JSON.stringify(enhancedData.economic_indicators)}` : 
+                  'No economic_indicators property found'}
+              </small>
+            </div>
           )}
         </div>
 
@@ -488,17 +509,37 @@ const EnhancedDataSources = ({ enhancedData }) => {
               </div>
             </div>
           ) : (
-            <div className="no-data">No enhanced news data available</div>
+            <div className="no-data">
+              No enhanced news data available
+              <br />
+              <small style={{color: '#999', fontSize: '0.8em'}}>
+                Debug: {enhancedData.enhanced_news ? 
+                  `Found enhanced_news but length: ${enhancedData.enhanced_news.length}` : 
+                  'No enhanced_news property found'}
+              </small>
+            </div>
           )}
         </div>
 
         <div className="data-source-item">
           <h5>🔗 Data Sources Used</h5>
-          <ul className="data-sources-list">
-            {enhancedData.data_sources_used?.map((source, index) => (
-              <li key={index}>{source}</li>
-            ))}
-          </ul>
+          {enhancedData.data_sources_used && enhancedData.data_sources_used.length > 0 ? (
+            <ul className="data-sources-list">
+              {enhancedData.data_sources_used.map((source, index) => (
+                <li key={index}>{source}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="no-data">
+              No data sources information available
+              <br />
+              <small style={{color: '#999', fontSize: '0.8em'}}>
+                Debug: {enhancedData.data_sources_used ? 
+                  `Found data_sources_used but length: ${enhancedData.data_sources_used.length}` : 
+                  'No data_sources_used property found'}
+              </small>
+            </div>
+          )}
         </div>
       </div>
 
