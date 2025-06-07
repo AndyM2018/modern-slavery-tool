@@ -362,7 +362,17 @@ const ManufacturingMap = ({ mapData, locations }) => {
                 click: () => setSelectedLocation(location)
               }}
             >
-              <Popup>
+              <Popup 
+                offset={[0, 10]}
+                className="custom-popup"
+                maxWidth={250}
+                minWidth={200}
+                autoPan={true}
+                autoPanPadding={[10, 10]}
+                closeButton={true}
+                autoClose={false}
+                closeOnEscapeKey={true}
+              >
                 <div className="location-popup">
                   <h4>{location.city}, {location.country}</h4>
                   <p><strong>Type:</strong> {location.facility_type}</p>
