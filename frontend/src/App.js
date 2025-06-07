@@ -190,7 +190,7 @@ const ManufacturingMap = ({ mapData, locations }) => {
             </div>
             <div className="stat-item medium-risk">
               <span className="stat-number">{mapData.risk_summary?.medium_risk_sites || 0}</span>
-              <span className="stat-label">Medium Risk</span>
+              <span className="stat-label">Low Risk</span>
             </div>
             <div className="stat-item low-risk">
               <span className="stat-number">{mapData.risk_summary?.low_risk_sites || 0}</span>
@@ -556,169 +556,167 @@ function App() {
                   </button>
                 </div>
 
-                {/* CHATGPT'S STRUCTURAL FIX: Single container for all tabs */}
+                {/* FIXED: Removed nested container div */}
                 <div className="tab-content">
-                  <div className="container">
-                    {activeTab === 'overview' && (
-                      <>
-                        {results.key_findings && results.key_findings.length > 0 && (
-                          <div className="section">
-                            <h3>🔍 Key Findings</h3>
-                            <ul className="findings-list">
-                              {results.key_findings.map((finding, index) => (
-                                <li key={index} className="finding-item">
-                                  <span className="finding-text">
-                                    {typeof finding === 'string' ? finding : finding.description}
+                  {activeTab === 'overview' && (
+                    <>
+                      {results.key_findings && results.key_findings.length > 0 && (
+                        <div className="section">
+                          <h3>🔍 Key Findings</h3>
+                          <ul className="findings-list">
+                            {results.key_findings.map((finding, index) => (
+                              <li key={index} className="finding-item">
+                                <span className="finding-text">
+                                  {typeof finding === 'string' ? finding : finding.description}
+                                </span>
+                                {finding.severity && (
+                                  <span className={`severity-badge ${finding.severity}`}>
+                                    {finding.severity.toUpperCase()}
                                   </span>
-                                  {finding.severity && (
-                                    <span className={`severity-badge ${finding.severity}`}>
-                                      {finding.severity.toUpperCase()}
-                                    </span>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        
-                        {results.recommendations && results.recommendations.length > 0 && (
-                          <div className="section">
-                            <h3>💡 Recommendations</h3>
-                            <ul className="recommendations-list">
-                              {results.recommendations.map((rec, index) => (
-                                <li key={index} className="recommendation-item">
-                                  <span className="rec-text">
-                                    {typeof rec === 'string' ? rec : rec.description || rec.title}
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {results.recommendations && results.recommendations.length > 0 && (
+                        <div className="section">
+                          <h3>💡 Recommendations</h3>
+                          <ul className="recommendations-list">
+                            {results.recommendations.map((rec, index) => (
+                              <li key={index} className="recommendation-item">
+                                <span className="rec-text">
+                                  {typeof rec === 'string' ? rec : rec.description || rec.title}
+                                </span>
+                                {rec.priority && (
+                                  <span className={`priority-badge ${rec.priority}`}>
+                                    {rec.priority.toUpperCase()} PRIORITY
                                   </span>
-                                  {rec.priority && (
-                                    <span className={`priority-badge ${rec.priority}`}>
-                                      {rec.priority.toUpperCase()} PRIORITY
-                                    </span>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
 
-                        {results.risk_factors && results.risk_factors.length > 0 && (
-                          <div className="section">
-                            <h3>⚠️ Risk Factors</h3>
-                            <div className="space-y-4">
-                              {results.risk_factors.map((riskFactor, index) => (
-                                <div key={index} className="finding-item">
-                                  <div className="finding-text">
-                                    <strong>{riskFactor.factor}</strong>
-                                    <div style={{fontSize: '0.9rem', color: '#666', marginTop: '8px'}}>
-                                      <strong>Impact:</strong> <span className={`severity-badge ${riskFactor.impact}`}>{riskFactor.impact?.toUpperCase()}</span>
-                                    </div>
-                                    <div style={{fontSize: '0.9rem', color: '#555', marginTop: '5px'}}>
-                                      <strong>Evidence:</strong> {riskFactor.evidence}
-                                    </div>
+                      {results.risk_factors && results.risk_factors.length > 0 && (
+                        <div className="section">
+                          <h3>⚠️ Risk Factors</h3>
+                          <div className="space-y-4">
+                            {results.risk_factors.map((riskFactor, index) => (
+                              <div key={index} className="finding-item">
+                                <div className="finding-text">
+                                  <strong>{riskFactor.factor}</strong>
+                                  <div style={{fontSize: '0.9rem', color: '#666', marginTop: '8px'}}>
+                                    <strong>Impact:</strong> <span className={`severity-badge ${riskFactor.impact}`}>{riskFactor.impact?.toUpperCase()}</span>
+                                  </div>
+                                  <div style={{fontSize: '0.9rem', color: '#555', marginTop: '5px'}}>
+                                    <strong>Evidence:</strong> {riskFactor.evidence}
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="section">
-                          <h3>📊 Assessment Details</h3>
-                          <div className="details-grid">
-                            <div className="detail-item">
-                              <strong>Assessment Type:</strong> Comprehensive with Benchmarking & Mapping
-                            </div>
-                            <div className="detail-item">
-                              <strong>Date:</strong> {results.assessment_date || new Date().toLocaleDateString()}
-                            </div>
-                            <div className="detail-item">
-                              <strong>Confidence Level:</strong> {results.confidence_level || 'High'}
-                            </div>
-                            {results.assessment_id && (
-                              <div className="detail-item">
-                                <strong>Assessment ID:</strong> {results.assessment_id}
                               </div>
-                            )}
+                            ))}
                           </div>
                         </div>
-                      </>
-                    )}
+                      )}
+                      
+                      <div className="section">
+                        <h3>📊 Assessment Details</h3>
+                        <div className="details-grid">
+                          <div className="detail-item">
+                            <strong>Assessment Type:</strong> Comprehensive with Benchmarking & Mapping
+                          </div>
+                          <div className="detail-item">
+                            <strong>Date:</strong> {results.assessment_date || new Date().toLocaleDateString()}
+                          </div>
+                          <div className="detail-item">
+                            <strong>Confidence Level:</strong> {results.confidence_level || 'High'}
+                          </div>
+                          {results.assessment_id && (
+                            <div className="detail-item">
+                              <strong>Assessment ID:</strong> {results.assessment_id}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
 
-                    {activeTab === 'benchmarking' && (
-                      <>
-                        <IndustryBenchmarking benchmarkData={results.industry_benchmarking} />
-                        
-                        <div className="section">
-                          <h3>📊 Assessment Details</h3>
-                          <div className="details-grid">
-                            <div className="detail-item">
-                              <strong>Benchmarking Source:</strong> Industry Database
-                            </div>
-                            <div className="detail-item">
-                              <strong>Peer Companies:</strong> {results.industry_benchmarking?.peer_companies?.length || 0} analyzed
-                            </div>
-                            <div className="detail-item">
-                              <strong>Data Quality:</strong> {results.industry_benchmarking?.data_quality || 'High'}
-                            </div>
-                            <div className="detail-item">
-                              <strong>Last Updated:</strong> {results.industry_benchmarking?.last_updated || new Date().toLocaleDateString()}
-                            </div>
+                  {activeTab === 'benchmarking' && (
+                    <>
+                      <IndustryBenchmarking benchmarkData={results.industry_benchmarking} />
+                      
+                      <div className="section">
+                        <h3>📊 Assessment Details</h3>
+                        <div className="details-grid">
+                          <div className="detail-item">
+                            <strong>Benchmarking Source:</strong> Industry Database
+                          </div>
+                          <div className="detail-item">
+                            <strong>Peer Companies:</strong> {results.industry_benchmarking?.peer_companies?.length || 0} analyzed
+                          </div>
+                          <div className="detail-item">
+                            <strong>Data Quality:</strong> {results.industry_benchmarking?.data_quality || 'High'}
+                          </div>
+                          <div className="detail-item">
+                            <strong>Last Updated:</strong> {results.industry_benchmarking?.last_updated || new Date().toLocaleDateString()}
                           </div>
                         </div>
-                      </>
-                    )}
+                      </div>
+                    </>
+                  )}
 
-                    {activeTab === 'mapping' && (
-                      <>
-                        <ManufacturingMap 
-                          mapData={results.supply_chain_map} 
-                          locations={results.manufacturing_locations} 
-                        />
-                        
-                        <div className="section">
-                          <h3>📊 Assessment Details</h3>
-                          <div className="details-grid">
-                            <div className="detail-item">
-                              <strong>Locations Mapped:</strong> {results.manufacturing_locations?.length || 0}
-                            </div>
-                            <div className="detail-item">
-                              <strong>Coverage:</strong> Global Supply Chain
-                            </div>
-                            <div className="detail-item">
-                              <strong>Risk Assessment:</strong> Country-level analysis
-                            </div>
-                            <div className="detail-item">
-                              <strong>Map Data:</strong> OpenStreetMap
-                            </div>
+                  {activeTab === 'mapping' && (
+                    <>
+                      <ManufacturingMap 
+                        mapData={results.supply_chain_map} 
+                        locations={results.manufacturing_locations} 
+                      />
+                      
+                      <div className="section">
+                        <h3>📊 Assessment Details</h3>
+                        <div className="details-grid">
+                          <div className="detail-item">
+                            <strong>Locations Mapped:</strong> {results.manufacturing_locations?.length || 0}
+                          </div>
+                          <div className="detail-item">
+                            <strong>Coverage:</strong> Global Supply Chain
+                          </div>
+                          <div className="detail-item">
+                            <strong>Risk Assessment:</strong> Country-level analysis
+                          </div>
+                          <div className="detail-item">
+                            <strong>Map Data:</strong> OpenStreetMap
                           </div>
                         </div>
-                      </>
-                    )}
+                      </div>
+                    </>
+                  )}
 
-                    {activeTab === 'enhanced' && (
-                      <>
-                        <EnhancedDataSources enhancedData={results.enhanced_data} />
-                        
-                        <div className="section">
-                          <h3>📊 Assessment Details</h3>
-                          <div className="details-grid">
-                            <div className="detail-item">
-                              <strong>Data Sources:</strong> {results.enhanced_data?.data_sources_used?.length || 0} external APIs
-                            </div>
-                            <div className="detail-item">
-                              <strong>News Articles:</strong> {results.enhanced_data?.enhanced_news?.length || 0} analyzed
-                            </div>
-                            <div className="detail-item">
-                              <strong>Economic Indicators:</strong> {Object.keys(results.enhanced_data?.economic_indicators || {}).length} countries
-                            </div>
-                            <div className="detail-item">
-                              <strong>Analysis Depth:</strong> Enhanced AI Processing
-                            </div>
+                  {activeTab === 'enhanced' && (
+                    <>
+                      <EnhancedDataSources enhancedData={results.enhanced_data} />
+                      
+                      <div className="section">
+                        <h3>📊 Assessment Details</h3>
+                        <div className="details-grid">
+                          <div className="detail-item">
+                            <strong>Data Sources:</strong> {results.enhanced_data?.data_sources_used?.length || 0} external APIs
+                          </div>
+                          <div className="detail-item">
+                            <strong>News Articles:</strong> {results.enhanced_data?.enhanced_news?.length || 0} analyzed
+                          </div>
+                          <div className="detail-item">
+                            <strong>Economic Indicators:</strong> {Object.keys(results.enhanced_data?.economic_indicators || {}).length} countries
+                          </div>
+                          <div className="detail-item">
+                            <strong>Analysis Depth:</strong> Enhanced AI Processing
                           </div>
                         </div>
-                      </>
-                    )}
-                  </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
