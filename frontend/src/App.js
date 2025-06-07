@@ -251,7 +251,7 @@ const RiskFactorsGrouped = ({ riskFactors }) => {
   );
 };
 
-// Industry Benchmarking Component
+// IMPROVED: Industry Benchmarking Component
 const IndustryBenchmarking = ({ benchmarkData }) => {
   if (!benchmarkData) return null;
 
@@ -265,97 +265,168 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
     return '#dc3545';
   };
 
+  const getScoreBackgroundColor = (score) => {
+    if (score <= 35) return '#d4edda';
+    if (score <= 65) return '#fff3cd';
+    return '#f8d7da';
+  };
+
   return (
     <div className="section industry-benchmarking">
       <h3>📊 Industry Benchmarking</h3>
       
       <div className="benchmark-overview">
-        <div className="benchmark-header">
-          <h4>Industry: {benchmarkData.matched_industry}</h4>
-          <div className="score-comparison">
-            <div className="score-item">
-              <span className="label">Your Score:</span>
-              <span 
-                className="score company-score"
-                style={{ color: getScoreColor(benchmarkData.company_score) }}
-              >
-                {benchmarkData.company_score}
-              </span>
-            </div>
-            <div className="score-item">
-              <span className="label">Industry Average:</span>
-              <span 
-                className="score industry-score"
-                style={{ color: getScoreColor(benchmarkData.industry_average_score) }}
-              >
-                {benchmarkData.industry_average_score}
-              </span>
-            </div>
-            <div className="score-item">
-              <span className="label">Performance:</span>
-              <span 
-                className="performance-badge"
-                style={{ color: getPerformanceColor(benchmarkData.performance_vs_peers) }}
-              >
-                {benchmarkData.performance_vs_peers.toUpperCase()}
-              </span>
-            </div>
-          </div>
-          
-          <div className="benchmark-insights">
-            <h5>Key Insights:</h5>
-            <ul>
-              {benchmarkData.benchmark_insights?.map((insight, index) => (
-                <li key={index}>{insight}</li>
-              ))}
-            </ul>
+        {/* IMPROVED: Better Industry Header */}
+        <div className="industry-header-card">
+          <div className="industry-title">
+            <h4>Industry: {benchmarkData.matched_industry}</h4>
+            <span className="data-quality-badge">
+              Data Quality: {benchmarkData.data_quality || 'High'}
+            </span>
           </div>
         </div>
 
-        <div className="benchmark-grid">
-          <div className="benchmark-section">
+        {/* IMPROVED: Better Score Comparison Layout */}
+        <div className="score-comparison-improved">
+          <div className="score-card company-score-card">
+            <div className="score-header">
+              <span className="score-label">Your Score</span>
+              <span className="score-trend">
+                {benchmarkData.performance_vs_peers === 'above average' ? '📈' : '📉'}
+              </span>
+            </div>
+            <div 
+              className="score-display"
+              style={{ 
+                color: getScoreColor(benchmarkData.company_score),
+                backgroundColor: getScoreBackgroundColor(benchmarkData.company_score)
+              }}
+            >
+              {benchmarkData.company_score}
+              <span className="score-suffix">/100</span>
+            </div>
+            <div className="score-description">Company Risk Score</div>
+          </div>
+
+          <div className="vs-divider">
+            <span>VS</span>
+          </div>
+
+          <div className="score-card industry-score-card">
+            <div className="score-header">
+              <span className="score-label">Industry Average</span>
+              <span className="score-trend">📊</span>
+            </div>
+            <div 
+              className="score-display"
+              style={{ 
+                color: getScoreColor(benchmarkData.industry_average_score),
+                backgroundColor: getScoreBackgroundColor(benchmarkData.industry_average_score)
+              }}
+            >
+              {benchmarkData.industry_average_score}
+              <span className="score-suffix">/100</span>
+            </div>
+            <div className="score-description">Industry Benchmark</div>
+          </div>
+        </div>
+
+        {/* IMPROVED: Performance Summary Card */}
+        <div className="performance-summary-card">
+          <div className="performance-result">
+            <span className="performance-label">Performance vs Peers:</span>
+            <span 
+              className="performance-value"
+              style={{ color: getPerformanceColor(benchmarkData.performance_vs_peers) }}
+            >
+              {benchmarkData.performance_vs_peers.toUpperCase()}
+            </span>
+          </div>
+          <div className="score-difference">
+            <span className="difference-label">Score Difference:</span>
+            <span className="difference-value">
+              {Math.abs(benchmarkData.company_score - benchmarkData.industry_average_score)} points
+            </span>
+          </div>
+          <div className="percentile-ranking">
+            <span className="percentile-label">Industry Ranking:</span>
+            <span className="percentile-value">
+              {benchmarkData.percentile_ranking || 'Calculating...'}
+            </span>
+          </div>
+        </div>
+
+        {/* IMPROVED: Key Insights Card */}
+        {benchmarkData.benchmark_insights && benchmarkData.benchmark_insights.length > 0 && (
+          <div className="insights-card">
+            <h5>🔍 Key Insights</h5>
+            <ul className="insights-list">
+              {benchmarkData.benchmark_insights.map((insight, index) => (
+                <li key={index} className="insight-item">{insight}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* IMPROVED: Industry Details Grid */}
+        <div className="industry-details-grid">
+          <div className="detail-card peer-companies-card">
             <h5>🏢 Industry Peer Companies</h5>
-            <div className="peer-companies">
-              {benchmarkData.peer_companies?.slice(0, 6).map((company, index) => (
-                <span key={index} className="peer-company">{company}</span>
+            <div className="peer-companies-improved">
+              {benchmarkData.peer_companies?.slice(0, 8).map((company, index) => (
+                <span key={index} className="peer-company-tag">{company}</span>
               ))}
             </div>
           </div>
 
-          <div className="benchmark-section">
+          <div className="detail-card risks-card">
             <h5>⚠️ Common Industry Risks</h5>
-            <ul className="industry-risks">
-              {benchmarkData.industry_common_risks?.slice(0, 4).map((risk, index) => (
-                <li key={index}>{capitalizeFirst(risk)}</li>
+            <ul className="industry-risks-improved">
+              {benchmarkData.industry_common_risks?.slice(0, 5).map((risk, index) => (
+                <li key={index} className="risk-item">
+                  <span className="risk-bullet">•</span>
+                  {capitalizeFirst(risk)}
+                </li>
               ))}
             </ul>
           </div>
 
-          <div className="benchmark-section">
+          <div className="detail-card practices-card">
             <h5>✅ Industry Best Practices</h5>
-            <ul className="best-practices">
-              {benchmarkData.industry_best_practices?.slice(0, 4).map((practice, index) => (
-                <li key={index}>{capitalizeFirst(practice)}</li>
+            <ul className="best-practices-improved">
+              {benchmarkData.industry_best_practices?.slice(0, 5).map((practice, index) => (
+                <li key={index} className="practice-item">
+                  <span className="practice-bullet">✓</span>
+                  {capitalizeFirst(practice)}
+                </li>
               ))}
             </ul>
           </div>
 
-          <div className="benchmark-section">
+          <div className="detail-card regulatory-card">
             <h5>📋 Regulatory Focus Areas</h5>
-            <div className="regulatory-items">
-              {benchmarkData.regulatory_focus?.slice(0, 3).map((regulation, index) => (
-                <span key={index} className="regulatory-item">{regulation}</span>
+            <div className="regulatory-tags">
+              {benchmarkData.regulatory_focus?.slice(0, 4).map((regulation, index) => (
+                <span key={index} className="regulatory-tag">{regulation}</span>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="benchmark-metadata">
-          <small>
-            Data Quality: <strong>{benchmarkData.data_quality}</strong> | 
-            Last Updated: <strong>{benchmarkData.last_updated}</strong> | 
-            Percentile: <strong>{benchmarkData.percentile_ranking}</strong>
-          </small>
+        {/* IMPROVED: Metadata Footer */}
+        <div className="benchmark-metadata-improved">
+          <div className="metadata-item">
+            <span className="metadata-label">Last Updated:</span>
+            <span className="metadata-value">{benchmarkData.last_updated}</span>
+          </div>
+          <div className="metadata-item">
+            <span className="metadata-label">Peer Companies Analyzed:</span>
+            <span className="metadata-value">{benchmarkData.peer_companies?.length || 0}</span>
+          </div>
+          <div className="metadata-item">
+            <span className="metadata-label">Data Sources:</span>
+            <span className="metadata-value">{benchmarkData.data_sources?.length || 3}</span>
+          </div>
         </div>
       </div>
     </div>
