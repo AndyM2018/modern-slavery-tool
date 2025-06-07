@@ -749,13 +749,13 @@ body {
   border-radius: 8px !important;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
   background: white !important;
-  max-width: 250px !important;
+  max-width: 280px !important;
 }
 
 .leaflet-popup-content {
   margin: 15px !important;
   line-height: 1.4 !important;
-  font-size: 0.9em !important;
+  font-size: 1em !important;
 }
 
 .leaflet-popup-tip {
@@ -772,7 +772,7 @@ body {
 .location-popup h4 {
   margin: 0 0 10px 0 !important;
   color: #495057 !important;
-  font-size: 1em !important;
+  font-size: 1.1em !important;
   font-weight: 600 !important;
   border-bottom: 1px solid #e9ecef;
   padding-bottom: 5px;
@@ -780,7 +780,7 @@ body {
 
 .location-popup p {
   margin: 6px 0 !important;
-  font-size: 0.85em !important;
+  font-size: 0.95em !important;
   color: #6c757d;
 }
 
@@ -792,9 +792,9 @@ body {
 /* Risk badge in popup */
 .location-popup .risk-badge {
   display: inline-block;
-  padding: 2px 8px !important;
+  padding: 3px 8px !important;
   border-radius: 4px !important;
-  font-size: 0.75em !important;
+  font-size: 0.8em !important;
   font-weight: 600 !important;
   margin-left: 5px !important;
   color: white !important;
@@ -912,7 +912,7 @@ body {
   padding: 12px;
   background: #f8f9fa;
   border-radius: 8px;
-  font-size: 0.9em;
+  font-size: 1em;
   border-left: 3px solid #007bff;
 }
 

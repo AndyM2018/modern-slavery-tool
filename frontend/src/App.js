@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -268,6 +268,23 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
 // Manufacturing Map Component
 const ManufacturingMap = ({ mapData, locations }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [hoveredLocation, setHoveredLocation] = useState(null);
+  const mapRef = useRef(null);
+  const markersRef = useRef([]);
+
+  // Effect to handle hover popup opening/closing
+  useEffect(() => {
+    if (hoveredLocation && mapRef.current) {
+      // Find the marker for the hovered location and open its popup
+      const marker = markersRef.current.find(m => 
+        m.location.city === hoveredLocation.city && 
+        m.location.country === hoveredLocation.country
+      );
+      if (marker && marker.markerRef) {
+        marker.markerRef.openPopup();
+      }
+    }
+  }, [hoveredLocation]);
 
   if (!locations || locations.length === 0) {
     return (
@@ -375,14 +392,14 @@ const ManufacturingMap = ({ mapData, locations }) => {
               >
                 <div className="location-popup">
                   <h4>{location.city}, {location.country}</h4>
-                  <p><strong>Type:</strong> {location.facility_type}</p>
-                  <p><strong>Products:</strong> {location.products}</p>
+                  <p><strong>Type:</strong> {capitalizeFirst(location.facility_type)}</p>
+                  <p><strong>Products:</strong> {capitalizeFirst(location.products)}</p>
                   <p><strong>Risk Level:</strong> 
                     <span 
                       className="risk-badge"
                       style={{ backgroundColor: getRiskColor(location.country_risk_score || 50) }}
                     >
-                      {location.country_risk_level || 'Unknown'}
+                      {capitalizeFirst(location.country_risk_level) || 'Unknown'}
                     </span>
                   </p>
                   {location.workforce_size && (
@@ -428,15 +445,21 @@ const ManufacturingMap = ({ mapData, locations }) => {
           </div>
           <div className="location-details-grid">
             <div><strong>Location:</strong> {selectedLocation.city}, {selectedLocation.country}</div>
-            <div><strong>Facility Type:</strong> {selectedLocation.facility_type}</div>
+            <div><strong>Facility Type:</strong> {capitalizeFirst(selectedLocation.facility_type)}</div>
             <div><strong>Risk Score:</strong> {selectedLocation.country_risk_score}/100</div>
-            <div><strong>Products/Services:</strong> {selectedLocation.products}</div>
+            <div><strong>Products/Services:</strong> {capitalizeFirst(selectedLocation.products)}</div>
           </div>
         </div>
       )}
     </div>
   );
 };
+
+  // Helper function to capitalize first letter
+  const capitalizeFirst = (str) => {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
 
 // Enhanced Data Sources Component
 const EnhancedDataSources = ({ enhancedData }) => {
