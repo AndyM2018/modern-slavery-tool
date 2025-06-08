@@ -1661,3 +1661,75 @@ details pre {
     color: #90cdf4;
   }
 }
+/* MOBILE-ONLY FIXES - Won't affect desktop */
+
+/* Fix 1: Tab Navigation Overlapping */
+@media (max-width: 768px) {
+  .tab-navigation {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 3px;
+  }
+
+  .tab-navigation::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .tab-button {
+    flex: none;
+    padding: 10px 14px;
+    font-size: 0.85em;
+    min-width: auto;
+  }
+
+  /* Fix 2: Score Cards Going Over Edge */
+  .score-comparison-improved {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .vs-divider {
+    transform: rotate(90deg);
+    margin: 5px 0;
+    width: 35px;
+    height: 35px;
+    font-size: 0.9em;
+  }
+
+  .score-card {
+    min-width: auto;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+    padding: 15px;
+  }
+
+  .score-display {
+    font-size: 2em;
+  }
+}
+
+@media (max-width: 480px) {
+  .tab-button {
+    padding: 8px 12px;
+    font-size: 0.8em;
+  }
+  
+  .score-card {
+    max-width: 250px;
+    padding: 12px;
+  }
+
+  .score-display {
+    font-size: 1.8em;
+  }
+
+  .vs-divider {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8em;
+  }
+}
