@@ -290,7 +290,7 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
         <div className="score-comparison-improved">
           <div className="score-card company-score-card">
             <div className="score-header">
-              <span className="score-label">Your Score</span>
+              <span className="score-label">Company Score</span>
               <span className="score-trend">
                 {benchmarkData.performance_vs_peers === 'above average' ? '📈' : '📉'}
               </span>
@@ -746,13 +746,15 @@ const EnhancedDataSources = ({ enhancedData }) => {
         </div>
       )}
 
-      {/* Debug Section - Remove in production */}
-      <details style={{marginTop: '20px', fontSize: '12px', color: '#666'}}>
-        <summary style={{cursor: 'pointer'}}>🔧 Debug: Raw Data Structure</summary>
-        <pre style={{background: '#f8f9fa', padding: '10px', borderRadius: '4px', overflow: 'auto', maxHeight: '200px'}}>
-          {JSON.stringify(enhancedData, null, 2)}
-        </pre>
-      </details>
+{/* Debug Section - Only show in development */}
+{process.env.NODE_ENV === 'development' && (
+  <details style={{marginTop: '20px', fontSize: '12px', color: '#666'}}>
+    <summary style={{cursor: 'pointer'}}>🔧 Debug: Raw Data Structure</summary>
+    <pre style={{background: '#f8f9fa', padding: '10px', borderRadius: '4px', overflow: 'auto', maxHeight: '200px'}}>
+      {JSON.stringify(enhancedData, null, 2)}
+    </pre>
+  </details>
+)}
     </div>
   );
 };
