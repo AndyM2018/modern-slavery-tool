@@ -850,8 +850,16 @@ function App() {
         <header className="header">
           <div className="brand-section">
             <div className="logo-line">
-              <img src="/rosetta-logo.png" alt="Rosetta Solutions Logo" className="company-logo" />
-              <h2 className="company-name">Rosetta Solutions</h2>
+              <a 
+                href="https://www.rosettasolutions.com.au" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="company-logo-link"
+                style={{display: 'flex', alignItems: 'center', gap: '15px', textDecoration: 'none', color: 'inherit'}}
+              >
+                <img src="/rosetta-logo.png" alt="Rosetta Solutions Logo" className="company-logo" />
+                <h2 className="company-name">Rosetta Solutions</h2>
+              </a>
             </div>
             <div className="title-line">
               <h1 className="main-title">Modern Slavery Risk Assessment</h1>
