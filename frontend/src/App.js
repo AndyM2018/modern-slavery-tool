@@ -765,6 +765,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
+  const [progress, setProgress] = useState(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -886,7 +887,30 @@ function App() {
                 >
                   {loading ? (
                     <>
-                      <span className="spinner"></span>
+                      <div className="circular-progress-container">
+                        <svg className="circular-progress" width="32" height="32">
+                          <circle 
+                            cx="16" 
+                            cy="16" 
+                            r="14" 
+                            stroke="rgba(255,255,255,0.3)" 
+                            strokeWidth="2" 
+                            fill="none"
+                          />
+                          <circle 
+                            cx="16" 
+                            cy="16" 
+                            r="14" 
+                            stroke="#ffffff" 
+                            strokeWidth="2" 
+                            fill="none"
+                            strokeDasharray="87.96"
+                            strokeDashoffset={87.96 - (87.96 * progress) / 100}
+                            className="progress-circle"
+                          />
+                        </svg>
+                        <div className="progress-percentage">{Math.round(progress)}%</div>
+                      </div>
                       Analyzing...
                     </>
                   ) : (
