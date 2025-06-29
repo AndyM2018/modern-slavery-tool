@@ -194,7 +194,6 @@ const ModernSlaveryRisk = ({ modernSlaveryData }) => {
     </div>
   );
 
-  const { final_risk_score, risk_category, inherent_risk, residual_risk, calculation_method, data_coverage } = modernSlaveryData;
 
   const getRiskColor = (score) => {
     if (score >= 75) return '#dc3545';
