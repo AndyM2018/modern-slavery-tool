@@ -1,0 +1,10 @@
+[build]
+  base = "frontend"
+  command = "npm run build --verbose"
+  publish = "frontend/build"
+
+[build.environment]
+  NODE_VERSION = "18"
+  CI = "false"
+  GENERATE_SOURCEMAP = "false"
+  DISABLE_ESLINT_PLUGIN = "true"
