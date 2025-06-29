@@ -421,6 +421,370 @@
   color: #495057;
 }
 
+/* ==== NEW MODERN SLAVERY SPECIFIC STYLES ==== */
+
+/* Modern Slavery Overview */
+.modern-slavery-overview {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+/* Modern Slavery Score Cards */
+.modern-slavery-risk-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.modern-slavery-score-card {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  transition: transform 0.3s ease;
+}
+
+.modern-slavery-score-card:hover {
+  transform: translateY(-3px);
+}
+
+.modern-slavery-score-card h4 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.score-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.breakdown-label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.breakdown-value {
+  font-weight: 700;
+  font-size: 1.2em;
+  color: #2c3e50;
+}
+
+.breakdown-item.final-score {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-left: none;
+}
+
+.breakdown-item.final-score .breakdown-label,
+.breakdown-item.final-score .breakdown-value {
+  color: white;
+}
+
+/* Assessment Method Card */
+.assessment-method-card {
+  background: #e8f4fd;
+  border: 1px solid #b3d7f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.assessment-method-card h5 {
+  margin: 0 0 10px 0;
+  color: #0056b3;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.assessment-method-card p {
+  margin: 0;
+  color: #495057;
+  line-height: 1.5;
+}
+
+/* Enhanced Risk Groups for Modern Slavery */
+.modern-slavery-risk-groups {
+  display: grid;
+  gap: 20px;
+  margin-top: 15px;
+}
+
+.modern-slavery-risk-group {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.modern-slavery-risk-group h5 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 1.2em;
+  font-weight: 600;
+  border-bottom: 2px solid #f8f9fa;
+  padding-bottom: 8px;
+}
+
+.ai-enhancement-indicator {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+  margin-left: 10px;
+}
+
+/* AI Analysis Display */
+.ai-analysis-section {
+  background: #f0f8f0;
+  border: 1px solid #d1e7dd;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 15px;
+}
+
+.ai-analysis-section h6 {
+  margin: 0 0 15px 0;
+  color: #198754;
+  font-size: 1em;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vulnerability-analysis, .business-implications {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-left: 4px solid #198754;
+}
+
+.vulnerability-analysis h6, .business-implications h6 {
+  margin: 0 0 10px 0;
+  color: #198754;
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
+.vulnerability-analysis p, .business-implications p {
+  margin: 0;
+  color: #495057;
+  line-height: 1.5;
+  font-size: 0.9em;
+}
+
+/* Manufacturing Locations Grid */
+.locations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.location-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.location-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.location-card.high-risk {
+  border-left: 5px solid #dc3545;
+}
+
+.location-card.medium-risk {
+  border-left: 5px solid #ffc107;
+}
+
+.location-card.low-risk {
+  border-left: 5px solid #28a745;
+}
+
+.location-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.location-name {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+.location-risk-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+}
+
+.location-risk-badge.high {
+  background: #dc3545;
+}
+
+.location-risk-badge.medium {
+  background: #ffc107;
+  color: #212529;
+}
+
+.location-risk-badge.low {
+  background: #28a745;
+}
+
+.location-details {
+  display: grid;
+  gap: 10px;
+}
+
+.location-detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+.location-detail-label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.location-detail-value {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.modern-slavery-indicator {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 15px;
+}
+
+.modern-slavery-indicator h6 {
+  margin: 0 0 8px 0;
+  color: #856404;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.modern-slavery-indicator p {
+  margin: 0;
+  color: #856404;
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+.show-details-button {
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.85em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+  width: 100%;
+}
+
+.show-details-button:hover {
+  background: #5a67d8;
+  transform: translateY(-1px);
+}
+
+.location-expanded-details {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+  border: 1px solid #e9ecef;
+}
+
+/* Enhanced Data Sources with AI */
+.enhanced-data-source {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.enhanced-data-source h5 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 1.1em;
+  font-weight: 600;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 8px;
+}
+
+.data-quality-indicators {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.quality-indicator {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+.quality-indicator.verified {
+  background: #d4edda;
+  color: #155724;
+}
+
+.quality-indicator.ai-enhanced {
+  background: #e8f4fd;
+  color: #0056b3;
+}
+
+.quality-indicator.real-time {
+  background: #fff3cd;
+  color: #856404;
+}
+
 /* IMPROVED Industry Benchmarking Styles */
 .industry-benchmarking {
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
@@ -1083,16 +1447,6 @@ details pre {
   color: #495057;
 }
 
-.risk-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.8em;
-  font-weight: 500;
-  color: white;
-  margin-left: 5px;
-}
-
 /* UPDATED: Risk Groups Styling */
 .risk-groups-container {
   display: grid;
@@ -1213,6 +1567,33 @@ details pre {
   padding-bottom: 8px;
 }
 
+/* Circular Progress Spinner */
+.circular-progress-container {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+}
+
+.circular-progress {
+  transform: rotate(-90deg);
+}
+
+.progress-circle {
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+.progress-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+
 /* MOBILE RESPONSIVENESS IMPROVEMENTS */
 
 /* Tablet View (768px and below) */
@@ -1253,13 +1634,22 @@ details pre {
   .tab-navigation {
     overflow-x: auto;
     padding: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .tab-navigation::-webkit-scrollbar {
+    display: none;
   }
 
   .tab-button {
     padding: 14px 16px;
     font-size: 0.9em;
     border-radius: 6px;
-    min-height: 44px; /* iOS recommended touch target */
+    min-height: 44px;
+    flex: none;
+    min-width: auto;
   }
 
   .summary-stats {
@@ -1280,24 +1670,32 @@ details pre {
     max-width: none;
   }
 
-  /* Updated responsive styles for new components */
-  .risk-groups-container {
+  /* Modern Slavery Mobile Styles */
+  .modern-slavery-risk-cards {
     grid-template-columns: 1fr;
   }
-  
+
+  .locations-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modern-slavery-risk-groups {
+    grid-template-columns: 1fr;
+  }
+
   .country-economic-data {
     padding: 8px;
   }
-  
+
   .data-sources-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .factor-header {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .factor-header strong {
     min-width: auto;
   }
@@ -1318,12 +1716,15 @@ details pre {
   .vs-divider {
     transform: rotate(90deg);
     margin: 10px 0;
+    width: 35px;
+    height: 35px;
+    font-size: 0.9em;
   }
 
   .score-card {
     min-width: auto;
     width: 100%;
-    max-width: 250px;
+    max-width: 280px;
     margin: 0 auto;
   }
 
@@ -1377,19 +1778,18 @@ details pre {
   }
 
   .tab-button {
-    padding: 12px 12px;
-    font-size: 0.9em;
-    min-width: 100px;
+    padding: 8px 12px;
+    font-size: 0.8em;
   }
 
   .risk-group {
     padding: 10px;
   }
-  
+
   .data-source-item {
     padding: 15px;
   }
-  
+
   .api-risk-factor {
     padding: 10px;
   }
@@ -1400,6 +1800,19 @@ details pre {
 
   .legend-items {
     gap: 10px;
+  }
+
+  /* Modern Slavery Mobile Styles */
+  .modern-slavery-score-card {
+    padding: 15px;
+  }
+
+  .location-card {
+    padding: 15px;
+  }
+
+  .enhanced-data-source {
+    padding: 15px;
   }
 
   /* IMPROVED: Industry Benchmarking Mobile Styles */
@@ -1423,13 +1836,13 @@ details pre {
   }
 
   .score-display {
-    font-size: 2em;
+    font-size: 1.8em;
   }
 
   .vs-divider {
-    width: 40px;
-    height: 40px;
-    font-size: 1em;
+    width: 30px;
+    height: 30px;
+    font-size: 0.8em;
   }
 
   .detail-card {
@@ -1448,7 +1861,6 @@ details pre {
     padding: 6px;
   }
 
-  /* Improve readability on small screens */
   .insight-item {
     font-size: 0.9em;
     line-height: 1.6;
@@ -1459,6 +1871,7 @@ details pre {
 @media (max-width: 320px) {
   .score-card {
     padding: 15px;
+    max-width: 250px;
   }
 
   .score-display {
@@ -1503,14 +1916,17 @@ details pre {
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
   .score-card,
   .detail-card,
-  .performance-summary-card {
+  .performance-summary-card,
+  .modern-slavery-score-card,
+  .location-card {
     border-width: 0.5px;
   }
 }
 
 /* Focus improvements for accessibility */
 .peer-company-tag:focus,
-.regulatory-tag:focus {
+.regulatory-tag:focus,
+.show-details-button:focus {
   outline: 2px solid #667eea;
   outline-offset: 2px;
 }
@@ -1520,6 +1936,7 @@ details pre {
   .header-buttons,
   .tab-navigation,
   .close-details-btn,
+  .show-details-button,
   details {
     display: none !important;
   }
@@ -1529,7 +1946,9 @@ details pre {
     border: 1px solid #ddd;
   }
 
-  .section {
+  .section,
+  .modern-slavery-score-card,
+  .location-card {
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -1554,7 +1973,9 @@ details pre {
   .priority-badge,
   .impact-badge,
   .peer-company-tag,
-  .regulatory-tag {
+  .regulatory-tag,
+  .location-risk-badge,
+  .quality-indicator {
     border: 1px solid currentColor;
   }
 
@@ -1562,11 +1983,14 @@ details pre {
     border: 2px solid #667eea;
   }
 
-  .assess-button {
+  .assess-button,
+  .show-details-button {
     border: 2px solid transparent;
   }
 
-  .score-card {
+  .score-card,
+  .modern-slavery-score-card,
+  .location-card {
     border: 2px solid #495057;
   }
 }
@@ -1593,7 +2017,8 @@ details pre {
 .tab-button:focus,
 .export-button:focus,
 .clear-button:focus,
-.close-details-btn:focus {
+.close-details-btn:focus,
+.show-details-button:focus {
   outline: 2px solid #667eea;
   outline-offset: 2px;
 }
@@ -1614,7 +2039,10 @@ details pre {
   .score-card,
   .detail-card,
   .performance-summary-card,
-  .insights-card {
+  .insights-card,
+  .modern-slavery-score-card,
+  .location-card,
+  .enhanced-data-source {
     background: #2d3748;
     color: #e2e8f0;
     border-color: #4a5568;
@@ -1623,7 +2051,9 @@ details pre {
   .section h3,
   .risk-card h3,
   .data-source-item h5,
-  .detail-card h5 {
+  .detail-card h5,
+  .modern-slavery-score-card h4,
+  .location-name {
     color: #e2e8f0;
   }
 
@@ -1637,7 +2067,9 @@ details pre {
   .recommendation-item,
   .detail-item,
   .risk-item,
-  .practice-item {
+  .practice-item,
+  .breakdown-item,
+  .location-detail-item {
     background: #4a5568;
     color: #e2e8f0;
   }
@@ -1652,110 +2084,14 @@ details pre {
     background: #2d3748;
   }
 
-  .insights-card {
+  .insights-card,
+  .assessment-method-card {
     background: #2c5282;
     border-color: #3182ce;
   }
 
-  .insights-card h5 {
+  .insights-card h5,
+  .assessment-method-card h5 {
     color: #90cdf4;
   }
-}
-/* MOBILE-ONLY FIXES - Won't affect desktop */
-
-/* Fix 1: Tab Navigation Overlapping */
-@media (max-width: 768px) {
-  .tab-navigation {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    padding: 3px;
-  }
-
-  .tab-navigation::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .tab-button {
-    flex: none;
-    padding: 10px 14px;
-    font-size: 0.85em;
-    min-width: auto;
-  }
-
-  /* Fix 2: Score Cards Going Over Edge */
-  .score-comparison-improved {
-    flex-direction: column;
-    gap: 15px;
-    padding: 15px;
-  }
-
-  .vs-divider {
-    transform: rotate(90deg);
-    margin: 5px 0;
-    width: 35px;
-    height: 35px;
-    font-size: 0.9em;
-  }
-
-  .score-card {
-    min-width: auto;
-    width: 100%;
-    max-width: 280px;
-    margin: 0 auto;
-    padding: 15px;
-  }
-
-  .score-display {
-    font-size: 2em;
-  }
-}
-
-@media (max-width: 480px) {
-  .tab-button {
-    padding: 8px 12px;
-    font-size: 0.8em;
-  }
-  
-  .score-card {
-    max-width: 250px;
-    padding: 12px;
-  }
-
-  .score-display {
-    font-size: 1.8em;
-  }
-
-  .vs-divider {
-    width: 30px;
-    height: 30px;
-    font-size: 0.8em;
-  }
-}
-/* Circular Progress Spinner */
-.circular-progress-container {
-  position: relative;
-  display: inline-block;
-  width: 32px;
-  height: 32px;
-}
-
-.circular-progress {
-  transform: rotate(-90deg);
-}
-
-.progress-circle {
-  transition: stroke-dashoffset 0.3s ease;
-}
-
-.progress-percentage {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 10px;
-  font-weight: 700;
-  color: white;
-  line-height: 1;
 }

@@ -1,4 +1,4 @@
-# Enhanced AI-Powered Modern Slavery Assessment Backend with Industry Benchmarking & Mapping
+# Enhanced AI-Powered Modern Slavery Assessment Backend with Sophisticated Risk Model - FULL VERSION
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
@@ -13,6 +13,11 @@ import json
 import numpy as np
 from collections import defaultdict
 import os
+try:
+    from fuzzywuzzy import fuzz
+except ImportError:
+    print("⚠️ fuzzywuzzy not installed, using basic string matching")
+    fuzz = None
 
 app = Flask(__name__)
 CORS(app)
@@ -40,7 +45,7 @@ OPENAI_API_KEY = api_keys['openai']
 SERPER_API_KEY = api_keys['serper']
 NEWS_API_KEY = api_keys['news']
 
-# Risk Intelligence Database
+# Risk Intelligence Database (Original)
 COUNTRY_RISK_INDEX = {
     "North Korea": 90, "Eritrea": 87, "Mauritania": 85, "Saudi Arabia": 82,
     "Turkey": 80, "Tajikistan": 78, "United Arab Emirates": 76, "Russia": 74,
@@ -88,12 +93,442 @@ def clean_json_response(ai_response):
     
     return cleaned.strip()
 
+# Modern Slavery Risk Data Loader
+class ModernSlaveryDataLoader:
+    def __init__(self):
+        self.inherent_data = {}
+        self.residual_data = {}
+        self.country_mapping = {
+            "Korea, Republic of": "South Korea",
+            "Korea, Democratic People's Republic of": "North Korea", 
+            "Russian Federation": "Russia",
+            "Iran, Islamic Republic of": "Iran",
+            "Venezuela, Bolivarian Republic of": "Venezuela",
+            "Syria, Arab Republic": "Syria",
+            "Congo, Democratic Republic of the": "Democratic Republic of Congo",
+            "United States of America": "United States",
+            "United Kingdom of Great Britain and Northern Ireland": "United Kingdom",
+            "Viet Nam": "Vietnam"
+        }
+        self.load_data()
+    
+    def normalize_country_name(self, country_name):
+        """Normalize country names for consistent matching"""
+        if not country_name:
+            return None
+        
+        # Check mapping first
+        if country_name in self.country_mapping:
+            return self.country_mapping[country_name]
+        
+        # Basic cleanup
+        return country_name.strip()
+    
+    def load_data(self):
+        """Load inherent and residual risk data from your actual CSV files"""
+        try:
+            print("🔍 Loading modern slavery risk datasets...")
+            
+            # Load Inherent Risk Data - Using your actual file names
+            inherent_files = {
+                'country_tiers': 'Data/Inherent/Country_Tiers_with_Continents.csv',
+                'prevalence_data': 'Data/Inherent/Full_Modern_Slavery_Prevalence_Table.csv', 
+                'gov_response': 'Data/Inherent/Government Response Score by Country and Milestone.csv',
+                'product_risks': 'Data/Inherent/Top five products at risk of modern slavery per G20 Country.csv',
+                'us_labour_issues': 'Data/Inherent/US_Labour_Issues.csv'
+            }
+            
+            for key, filepath in inherent_files.items():
+                try:
+                    if os.path.exists(filepath):
+                        # Handle different file extensions and encodings
+                        try:
+                            if filepath.endswith('.csv'):
+                                # Try UTF-8 first, then cp1252 (Windows encoding)
+                                try:
+                                    df = pd.read_csv(filepath, encoding='utf-8')
+                                except UnicodeDecodeError:
+                                    df = pd.read_csv(filepath, encoding='cp1252')
+                            else:
+                                # Try reading as Excel if not CSV
+                                df = pd.read_excel(filepath)
+                        except Exception as read_error:
+                            print(f"⚠️ Encoding issue with {key}, trying latin-1: {read_error}")
+                            df = pd.read_csv(filepath, encoding='latin-1')
+                        
+                        print(f"✅ Loaded {key}: {len(df)} records")
+                        print(f"   Columns: {list(df.columns)}")
+                        
+                        # Normalize country names in the data if Country column exists
+                        if 'Country' in df.columns:
+                            df['Country'] = df['Country'].apply(self.normalize_country_name)
+                        elif 'Country/Area' in df.columns:
+                            df['Country'] = df['Country/Area'].apply(self.normalize_country_name)
+                        
+                        self.inherent_data[key] = df
+                    else:
+                        print(f"⚠️ File not found: {filepath}")
+                except Exception as e:
+                    print(f"❌ Error loading {key}: {e}")
+            
+            # Load Residual Risk Data - Using your actual file names  
+            residual_files = {
+                'uk_registry': 'Data/Residual/uk_statements_registry_2025.csv',
+                'australian_registry': 'Data/Residual/aus_modern_slavery_registry.csv', 
+                'bhr_registry': 'Data/Residual/bhr_modern_slavery_registry.csv'
+            }
+            
+            for key, filepath in residual_files.items():
+                try:
+                    if os.path.exists(filepath):
+                        # Handle different file extensions and encodings
+                        try:
+                            if filepath.endswith('.csv'):
+                                df = pd.read_csv(filepath, encoding='utf-8')
+                            else:
+                                df = pd.read_excel(filepath)
+                        except UnicodeDecodeError:
+                            # Try different encoding if UTF-8 fails
+                            df = pd.read_csv(filepath, encoding='latin-1')
+                        
+                        print(f"✅ Loaded {key}: {len(df)} records")
+                        print(f"   Columns: {list(df.columns)[:5]}...")  # Show first 5 columns
+                        self.residual_data[key] = df
+                    else:
+                        print(f"⚠️ File not found: {filepath}")
+                except Exception as e:
+                    print(f"❌ Error loading {key}: {e}")
+            
+            print(f"📊 Data loading complete: {len(self.inherent_data)} inherent datasets, {len(self.residual_data)} residual datasets")
+            
+        except Exception as e:
+            print(f"❌ Error in data loading: {e}")
+
+# Modern Slavery Risk Calculator
+class ModernSlaveryRiskCalculator:
+    def __init__(self, data_loader):
+        self.data_loader = data_loader
+        
+    def get_country_inherent_risk(self, country):
+        """Calculate inherent risk for a country from your actual datasets"""
+        try:
+            normalized_country = self.data_loader.normalize_country_name(country)
+            if not normalized_country:
+                return None
+            
+            print(f"🔍 Calculating inherent risk for {normalized_country}")
+            risk_components = {}
+            
+            # TIP Tier (0-40 points) - from Country_Tiers_with_Continents.csv (176 countries)
+            country_tiers_data = self.data_loader.inherent_data.get('country_tiers')
+            if country_tiers_data is not None and not country_tiers_data.empty:
+                tier_match = country_tiers_data[country_tiers_data['Country'] == normalized_country]
+                if not tier_match.empty:
+                    tier = str(tier_match.iloc[0].get('Tier', 'Tier 3'))
+                    print(f"📊 Found TIP tier: {tier}")
+                    # Convert tier string to numeric score (inverted - higher tier = lower risk)
+                    if 'Tier 1' in tier:
+                        risk_components['tip_tier'] = 5  # Best rating = lowest risk
+                    elif 'Tier 2 Watch List' in tier:
+                        risk_components['tip_tier'] = 15
+                    elif 'Tier 2' in tier:
+                        risk_components['tip_tier'] = 25
+                    elif 'Tier 3' in tier:
+                        risk_components['tip_tier'] = 40  # Worst rating = highest risk
+                    else:
+                        risk_components['tip_tier'] = 25  # Default
+                else:
+                    print(f"⚠️ No TIP tier data for {normalized_country}")
+                    risk_components['tip_tier'] = None
+            
+            # GSI Prevalence (0-25 points) - from Full_Modern_Slavery_Prevalence_Table.csv (160 countries)
+            prevalence_data = self.data_loader.inherent_data.get('prevalence_data')
+            if prevalence_data is not None and not prevalence_data.empty:
+                prevalence_match = prevalence_data[prevalence_data['Country'] == normalized_country]
+                if not prevalence_match.empty:
+                    prevalence = float(prevalence_match.iloc[0].get('Prevalence_Per_1000', 0))
+                    print(f"📊 Found prevalence: {prevalence} per 1000")
+                    # Scale prevalence (0-50 per 1000) to 0-25 points
+                    risk_components['gsi_prevalence'] = min(25, max(0, int(prevalence * 0.5)))
+                else:
+                    print(f"⚠️ No prevalence data for {normalized_country}")
+                    risk_components['gsi_prevalence'] = None
+            
+            # Government Response (0-15 points) - from Government Response Score by Country and Milestone.csv (176 countries)
+            # Inverted: lower response score = higher risk
+            gov_data = self.data_loader.inherent_data.get('gov_response')
+            if gov_data is not None and not gov_data.empty:
+                gov_match = gov_data[gov_data['Country'] == normalized_country]
+                if not gov_match.empty:
+                    response_score = int(gov_match.iloc[0].get('Total_Policy_Score', 50))
+                    print(f"📊 Found gov response: {response_score}")
+                    # Invert score - higher government response = lower risk
+                    # Scale from 0-100 gov score to 15-0 risk points
+                    risk_components['gov_response'] = max(0, min(15, int(15 - (response_score * 0.15))))
+                else:
+                    print(f"⚠️ No government response data for {normalized_country}")
+                    risk_components['gov_response'] = None
+            
+            # Product/Labor Risk (0-15 points) - from US_Labour_Issues.csv (451 records)
+            # Check US Labour Issues for specific country risks
+            us_labour_data = self.data_loader.inherent_data.get('us_labour_issues')
+            if us_labour_data is not None and not us_labour_data.empty:
+                # Use Country/Area column for matching
+                country_issues = us_labour_data[us_labour_data['Country/Area'] == normalized_country]
+                if not country_issues.empty:
+                    issue_count = len(country_issues)
+                    print(f"📊 Found {issue_count} labor issues")
+                    # Scale based on number of documented issues (max 15 points)
+                    risk_components['labor_issues'] = min(15, max(0, issue_count * 2))
+                else:
+                    print(f"⚠️ No labor issues data for {normalized_country}")
+                    risk_components['labor_issues'] = None
+            
+            print(f"✅ Inherent risk components for {normalized_country}: {risk_components}")
+            return risk_components
+            
+        except Exception as e:
+            print(f"❌ Error calculating country inherent risk for {country}: {e}")
+            return None
+    
+    def get_industry_product_risk(self, industry, products):
+        """Calculate industry and product risk from your datasets"""
+        try:
+            print(f"🔍 Calculating industry/product risk for {industry}")
+            risk_components = {}
+            
+            # Product Risk (0-10 points) - from Top five products at risk of modern slavery per G20 Country.csv (263 records)
+            product_data = self.data_loader.inherent_data.get('product_risks')
+            if product_data is not None and not product_data.empty:
+                max_product_risk = 0
+                
+                # Check the "Imported product at risk of modern slavery" column
+                high_risk_products = ['Electronics', 'Garments', 'Textiles', 'Timber', 'Cotton', 'Cocoa', 'Palm Oil']
+                for product in high_risk_products:
+                    if product.lower() in industry.lower():
+                        # Check if this product appears in the risk data (column has leading space)
+                        product_col = ' Imported product at risk of modern slavery'  # Note the leading space
+                        if product_col in product_data.columns:
+                            product_matches = product_data[product_data[product_col].str.contains(product, case=False, na=False)]
+                        else:
+                            # Try without leading space
+                            product_matches = product_data[product_data['Imported product at risk of modern slavery'].str.contains(product, case=False, na=False)]
+                        
+                        if not product_matches.empty:
+                            # Higher risk if more countries source this product
+                            unique_countries = len(product_matches['Source Country'].unique())
+                            product_risk = min(10, max(2, unique_countries // 2))  # Scale down
+                            max_product_risk = max(max_product_risk, product_risk)
+                            print(f"📊 Found product risk for {product}: {product_risk} (from {unique_countries} countries)")
+                
+                risk_components['product_risk'] = max_product_risk if max_product_risk > 0 else None
+            else:
+                risk_components['product_risk'] = None
+            
+            # Industry Risk (0-10 points) - based on industry classification
+            industry_risk_mapping = {
+                'textiles': 10, 'garment': 10, 'apparel': 10, 'fashion': 9, 'clothing': 9,
+                'electronics': 8, 'manufacturing': 7, 'construction': 6,
+                'agriculture': 8, 'farming': 8, 'mining': 7, 'extractives': 7,
+                'automotive': 5, 'pharmaceutical': 3, 'technology': 2, 'software': 2, 
+                'financial': 2, 'banking': 2, 'consulting': 2, 'services': 3
+            }
+            
+            industry_lower = industry.lower()
+            industry_risk = 5  # default medium risk
+            matched_keywords = []
+            
+            for keyword, risk in industry_risk_mapping.items():
+                if keyword in industry_lower:
+                    industry_risk = max(industry_risk, risk)  # Take highest risk
+                    matched_keywords.append(keyword)
+            
+            if matched_keywords:
+                print(f"📊 Industry risk: {industry_risk} (matched: {matched_keywords})")
+            else:
+                print(f"📊 Default industry risk: {industry_risk}")
+            
+            risk_components['industry_risk'] = industry_risk
+            
+            print(f"✅ Industry/product risk components: {risk_components}")
+            return risk_components
+            
+        except Exception as e:
+            print(f"❌ Error calculating industry/product risk: {e}")
+            return {}
+    
+    def get_company_residual_risk(self, company_name):
+        """Calculate residual risk based on company statements from your registries"""
+        try:
+            residual_info = {
+                'has_statement': False,
+                'statement_quality': 0,
+                'data_source': None,
+                'statement_details': None
+            }
+            
+            print(f"🔍 Searching for {company_name} in registries...")
+            
+            # Check UK Registry - uk_statements_registry_2025.csv (70K+ records)
+            uk_data = self.data_loader.residual_data.get('uk_registry')
+            if uk_data is not None and not uk_data.empty:
+                print(f"📊 Searching UK registry: {len(uk_data)} records")
+                # Check OrganisationName and ParentName columns
+                uk_matches = pd.DataFrame()
+                
+                if 'OrganisationName' in uk_data.columns:
+                    org_matches = uk_data[uk_data['OrganisationName'].str.contains(company_name, case=False, na=False)]
+                    uk_matches = pd.concat([uk_matches, org_matches])
+                
+                if 'ParentName' in uk_data.columns:
+                    parent_matches = uk_data[uk_data['ParentName'].str.contains(company_name, case=False, na=False)]
+                    uk_matches = pd.concat([uk_matches, parent_matches])
+                
+                if not uk_matches.empty:
+                    print(f"✅ Found {len(uk_matches)} UK matches")
+                    # Get the most recent/complete statement
+                    best_match = uk_matches.iloc[0]
+                    quality_score = self.calculate_uk_statement_quality(best_match)
+                    
+                    residual_info.update({
+                        'has_statement': True,
+                        'statement_quality': quality_score,
+                        'data_source': 'UK_Government_Registry',
+                        'statement_details': {k: str(v) for k, v in best_match.to_dict().items()}
+                    })
+                    return residual_info
+            
+            # Check Australian Registry - aus_modern_slavery_registry.csv (16K+ records)
+            aus_data = self.data_loader.residual_data.get('australian_registry')
+            if aus_data is not None and not aus_data.empty:
+                print(f"📊 Searching Australian registry: {len(aus_data)} records")
+                # Check ReportingEntities column (contains company names)
+                if 'ReportingEntities' in aus_data.columns:
+                    aus_matches = aus_data[aus_data['ReportingEntities'].str.contains(company_name, case=False, na=False)]
+                    if not aus_matches.empty:
+                        print(f"✅ Found {len(aus_matches)} Australian matches")
+                        best_match = aus_matches.iloc[0]
+                        quality_score = self.calculate_aus_statement_quality(best_match)
+                        
+                        residual_info.update({
+                            'has_statement': True,
+                            'statement_quality': quality_score,
+                            'data_source': 'Australian_Government_Registry',
+                            'statement_details': {k: str(v) for k, v in best_match.to_dict().items()}
+                        })
+                        return residual_info
+            
+            # Check BHR Registry - bhr_modern_slavery_registry.csv (15K+ records)
+            bhr_data = self.data_loader.residual_data.get('bhr_registry')
+            if bhr_data is not None and not bhr_data.empty:
+                print(f"📊 Searching BHR registry: {len(bhr_data)} records")
+                # Check Company Name column
+                if 'Company Name' in bhr_data.columns:
+                    bhr_matches = bhr_data[bhr_data['Company Name'].str.contains(company_name, case=False, na=False)]
+                    if not bhr_matches.empty:
+                        print(f"✅ Found {len(bhr_matches)} BHR matches")
+                        best_match = bhr_matches.iloc[0]
+                        quality_score = self.calculate_bhr_statement_quality(best_match)
+                        
+                        residual_info.update({
+                            'has_statement': True,
+                            'statement_quality': quality_score,
+                            'data_source': 'BHR_Registry',
+                            'statement_details': {k: str(v) for k, v in best_match.to_dict().items()}
+                        })
+                        return residual_info
+            
+            print(f"⚠️ No registry matches found for {company_name}")
+            return residual_info
+            
+        except Exception as e:
+            print(f"❌ Error calculating residual risk for {company_name}: {e}")
+            return {'has_statement': False, 'statement_quality': 0, 'data_source': None}
+    
+    def calculate_uk_statement_quality(self, statement_row):
+        """Calculate quality score for UK statement based on completeness"""
+        try:
+            score = 30  # base score
+            
+            # Add points for statement completeness
+            if statement_row.get('StatementIncludesOrgStructure') == 'Yes':
+                score += 10
+            if statement_row.get('StatementIncludesPolicies') == 'Yes':
+                score += 15
+            if statement_row.get('StatementIncludesRisksAssessment') == 'Yes':
+                score += 15
+            if statement_row.get('StatementIncludesDueDiligence') == 'Yes':
+                score += 15
+            if statement_row.get('StatementIncludesTraining') == 'Yes':
+                score += 10
+            if statement_row.get('StatementIncludesGoals') == 'Yes':
+                score += 5
+            
+            return min(100, max(0, score))
+        except:
+            return 35  # default score
+    
+    def calculate_aus_statement_quality(self, statement_row):
+        """Calculate quality score for Australian statement"""
+        try:
+            score = 40  # base score for having a statement
+            
+            # Add points based on revenue (larger companies expected to have better statements)
+            revenue = str(statement_row.get('AnnualRevenue', ''))
+            if '1BN+' in revenue:
+                score += 20
+            elif any(x in revenue for x in ['500M', '200M', '150M']):
+                score += 10
+            
+            # Add points for joint submissions (shows collaboration)
+            if statement_row.get('Type') == 'Joint':
+                score += 10
+            
+            # Add points for having related statements (shows consistency)
+            related = str(statement_row.get('RelatedStatements', ''))
+            if related and len(related.split(',')) > 2:
+                score += 10
+            
+            return min(100, max(0, score))
+        except:
+            return 45  # default score
+    
+    def calculate_bhr_statement_quality(self, statement_row):
+        """Calculate quality score for BHR statement"""
+        try:
+            score = 35  # base score
+            
+            # Add points for board approval
+            if statement_row.get('Approved By Board - Effect') == 'Positive':
+                score += 20
+            
+            # Add points for director signature
+            if statement_row.get('Signed by director - Effect') == 'Positive':
+                score += 15
+            
+            # Add points for front page link
+            if statement_row.get('Link on front page - Effect') == 'Positive':
+                score += 10
+            
+            # Add points for completion indicators
+            completion_fields = ['Link on front page - Completion', 'Signed by director - Completion', 'Approved By Board - Completion']
+            done_count = sum(1 for field in completion_fields if statement_row.get(field) == 'Done')
+            score += done_count * 5
+            
+            return min(100, max(0, score))
+        except:
+            return 40  # default score
+
 class EnhancedModernSlaveryAssessment:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
+        
+        # Initialize modern slavery risk calculator
+        self.data_loader = ModernSlaveryDataLoader()
+        self.risk_calculator = ModernSlaveryRiskCalculator(self.data_loader)
     
     def call_openai_api(self, messages, max_tokens=1500, temperature=0.1):
         """OpenAI API call with fresh API key"""
@@ -125,6 +560,230 @@ class EnhancedModernSlaveryAssessment:
         except Exception as e:
             print(f"Error calling OpenAI API: {e}")
             return None
+    
+    def ai_fill_country_gaps(self, country, missing_components):
+        """Use AI to fill missing country risk data"""
+        try:
+            print(f"🤖 AI filling gaps for {country}: {missing_components}")
+            
+            messages = [
+                {"role": "system", "content": "You are an expert on modern slavery risk assessment with access to comprehensive country data. Provide accurate risk assessments based on known conditions."},
+                {"role": "user", "content": f"""
+                Provide modern slavery risk data for {country} for these missing components: {missing_components}
+                
+                Scoring guidelines:
+                - TIP tier: 1=5 points (best), 2=25 points, 2WL=15 points, 3=40 points (worst)
+                - GSI prevalence: Scale 0-25 points (per 1000 population prevalence * 0.5)
+                - Government response: 0-15 points (15=worst response, 0=best response)
+                - Labor issues: 0-15 points (documented issues * 2)
+                
+                Respond with ONLY valid JSON:
+                {{
+                    "tip_tier": number_0_to_40_or_null,
+                    "gsi_prevalence": number_0_to_25_or_null,
+                    "gov_response": number_0_to_15_or_null,
+                    "labor_issues": number_0_to_15_or_null,
+                    "reasoning": "brief explanation of risk factors"
+                }}
+                """}
+            ]
+            
+            ai_response = self.call_openai_api(messages, max_tokens=300, temperature=0.1)
+            
+            if ai_response:
+                try:
+                    cleaned_response = clean_json_response(ai_response)
+                    return json.loads(cleaned_response)
+                except json.JSONDecodeError as e:
+                    print(f"Error parsing AI country risk data: {e}")
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error in AI country gap filling: {e}")
+            return None
+    
+    def ai_assess_company_statements(self, company_name):
+        """Use AI to assess company modern slavery statements if not in registries"""
+        try:
+            print(f"🤖 AI assessing company statements for {company_name}")
+            
+            messages = [
+                {"role": "system", "content": "You are an expert in modern slavery legislation and corporate compliance. Assess companies based on their known public commitments and statements."},
+                {"role": "user", "content": f"""
+                Assess {company_name}'s modern slavery statement and compliance efforts.
+                
+                Consider:
+                - Known public statements on modern slavery
+                - Corporate social responsibility commitments
+                - Supply chain transparency initiatives
+                - Industry reputation for labor practices
+                - Any known investigations or issues
+                
+                Score the statement quality 0-100:
+                - 0-30: No statement or very poor practices
+                - 31-50: Basic statement, limited action
+                - 51-70: Good statement with some implementation
+                - 71-85: Strong statement with clear actions
+                - 86-100: Exceptional leadership in modern slavery prevention
+                
+                Respond with ONLY valid JSON:
+                {{
+                    "has_statement": true_or_false,
+                    "statement_quality": number_0_to_100,
+                    "data_source": "AI_Assessment",
+                    "reasoning": "brief explanation of assessment",
+                    "ai_enhanced": true
+                }}
+                """}
+            ]
+            
+            ai_response = self.call_openai_api(messages, max_tokens=400, temperature=0.1)
+            
+            if ai_response:
+                try:
+                    cleaned_response = clean_json_response(ai_response)
+                    return json.loads(cleaned_response)
+                except json.JSONDecodeError as e:
+                    print(f"Error parsing AI company assessment: {e}")
+            
+            # Fallback assessment
+            return {
+                "has_statement": False,
+                "statement_quality": 25,
+                "data_source": "AI_Assessment_Fallback",
+                "reasoning": "Limited public information available",
+                "ai_enhanced": True
+            }
+            
+        except Exception as e:
+            print(f"Error in AI company assessment: {e}")
+            return {"has_statement": False, "statement_quality": 25, "ai_enhanced": True}
+    
+    def calculate_modern_slavery_risk_score(self, company_name, country, industry, product_categories=None, workforce_demographics=None):
+        """Calculate sophisticated modern slavery risk using inherent + residual model"""
+        try:
+            print(f"🎯 Calculating modern slavery risk for {company_name}")
+            
+            # Step 1: Calculate Inherent Risk (0-100)
+            inherent_components = {}
+            missing_components = []
+            
+            # Get country inherent risk from datasets
+            country_risk_data = self.risk_calculator.get_country_inherent_risk(country)
+            
+            if country_risk_data:
+                inherent_components.update(country_risk_data)
+                print(f"📊 Country data found for {country}")
+            else:
+                print(f"⚠️ No country data for {country}, will use AI")
+                missing_components.extend(['tip_tier', 'gsi_prevalence', 'gov_response', 'labor_issues'])
+            
+            # Get industry/product risk from datasets
+            industry_product_risk = self.risk_calculator.get_industry_product_risk(industry, product_categories or [])
+            if industry_product_risk:
+                inherent_components.update(industry_product_risk)
+                print(f"📊 Industry data found for {industry}")
+            else:
+                print(f"⚠️ Limited industry data, will use AI")
+                missing_components.extend(['industry_risk', 'product_risk'])
+            
+            # Fill gaps with AI if needed
+            if missing_components:
+                ai_data = self.ai_fill_country_gaps(country, missing_components)
+                if ai_data:
+                    for component in missing_components:
+                        if ai_data.get(component) is not None:
+                            inherent_components[component] = ai_data[component]
+                    print(f"🤖 AI filled {len([c for c in missing_components if ai_data.get(c) is not None])} gaps")
+            
+            # Ensure all components have values (fallback to reasonable defaults)
+            component_defaults = {
+                'tip_tier': 25, 'gsi_prevalence': 12, 'gov_response': 8,
+                'industry_risk': 6, 'product_risk': 3, 'labor_issues': 4
+            }
+            
+            for component, default in component_defaults.items():
+                if inherent_components.get(component) is None:
+                    inherent_components[component] = default
+            
+            # Calculate total inherent risk (max 100)
+            inherent_score = sum(inherent_components.values())
+            inherent_score = min(100, max(0, inherent_score))
+            
+            print(f"📊 Inherent risk components: {inherent_components}")
+            print(f"📊 Total inherent score: {inherent_score}")
+            
+            # Step 2: Calculate Residual Risk (company mitigation efforts)
+            residual_data = self.risk_calculator.get_company_residual_risk(company_name)
+            
+            # If no registry data found, use AI assessment
+            if not residual_data.get('has_statement'):
+                print(f"🤖 No registry data for {company_name}, using AI assessment")
+                ai_residual = self.ai_assess_company_statements(company_name)
+                residual_data.update(ai_residual)
+            
+            residual_score = residual_data.get('statement_quality', 25)
+            print(f"📊 Residual risk data: {residual_data}")
+            print(f"📊 Residual score: {residual_score}")
+            
+            # Step 3: Apply sophisticated formula
+            # Final Score = 0.75 × Inherent Risk + 0.25 × (100 - Residual Risk × 4)
+            # This means good residual risk (high statement quality) reduces the final score
+            
+            residual_adjustment = max(0, min(100, residual_score * 4))  # Scale 0-100 to 0-400, cap at 100
+            final_score = 0.75 * inherent_score + 0.25 * (100 - residual_adjustment)
+            final_score = min(100, max(0, int(final_score)))
+            
+            print(f"🎯 Final modern slavery risk score: {final_score}")
+            
+            # Determine risk category
+            if final_score >= 75:
+                risk_category = "Very High"
+            elif final_score >= 60:
+                risk_category = "High"
+            elif final_score >= 40:
+                risk_category = "Medium"
+            elif final_score >= 25:
+                risk_category = "Low"
+            else:
+                risk_category = "Very Low"
+            
+            # Check data coverage
+            data_coverage = {
+                'inherent_data_available': bool(country_risk_data and industry_product_risk),
+                'residual_data_available': residual_data.get('data_source') and 'AI' not in residual_data.get('data_source', ''),
+                'ai_enhanced': bool(missing_components) or residual_data.get('ai_enhanced', False)
+            }
+            
+            return {
+                'final_risk_score': final_score,
+                'risk_category': risk_category,
+                'inherent_risk': {
+                    'inherent_score': inherent_score,
+                    'components': inherent_components
+                },
+                'residual_risk': {
+                    'residual_score': residual_score,
+                    'has_statement': residual_data.get('has_statement', False),
+                    'data_source': residual_data.get('data_source', 'Unknown'),
+                    'ai_enhanced': residual_data.get('ai_enhanced', False)
+                },
+                'data_coverage': data_coverage,
+                'calculation_method': 'Sophisticated: 0.75 × Inherent + 0.25 × (100 - Residual × 4)'
+            }
+            
+        except Exception as e:
+            print(f"❌ Error calculating modern slavery risk: {e}")
+            # Return fallback assessment
+            return {
+                'final_risk_score': 50,
+                'risk_category': 'Medium',
+                'inherent_risk': {'inherent_score': 50, 'components': {}},
+                'residual_risk': {'residual_score': 25, 'has_statement': False},
+                'data_coverage': {'ai_enhanced': True, 'error': str(e)},
+                'calculation_method': 'Fallback due to error'
+            }
     
     def get_company_profile(self, company_name):
         """Enhanced company profile with AI intelligence"""
@@ -487,7 +1146,7 @@ class EnhancedModernSlaveryAssessment:
         
         return tiers
 
-    # FIXED: Enhanced API Data Collection with better error handling and fallbacks
+    # ENHANCED API Data Collection with better error handling and fallbacks
     def get_economic_indicators(self, countries):
         """Get economic data from World Bank API with IMPROVED error handling"""
         try:
@@ -496,73 +1155,26 @@ class EnhancedModernSlaveryAssessment:
             
             # Enhanced country name mapping for World Bank API
             country_mapping = {
-                'United States': 'US',
-                'United Kingdom': 'GB', 
-                'China': 'CN',
-                'Germany': 'DE',
-                'France': 'FR',
-                'Japan': 'JP',
-                'India': 'IN',
-                'Brazil': 'BR',
-                'Canada': 'CA',
-                'Australia': 'AU',
-                'South Korea': 'KR',
-                'Netherlands': 'NL',
-                'Mexico': 'MX',
-                'Italy': 'IT',
-                'Spain': 'ES',
-                'Turkey': 'TR',
-                'Indonesia': 'ID',
-                'Thailand': 'TH',
-                'Vietnam': 'VN',
-                'Bangladesh': 'BD',
-                'Pakistan': 'PK',
-                'Philippines': 'PH',
-                'Malaysia': 'MY',
-                'Singapore': 'SG',
-                'Taiwan': 'TW',
-                'Hong Kong': 'HK',
-                'South Africa': 'ZA',
-                'Egypt': 'EG',
-                'Morocco': 'MA',
-                'Nigeria': 'NG',
-                'Kenya': 'KE',
-                'Ethiopia': 'ET',
-                'Poland': 'PL',
-                'Czech Republic': 'CZ',
-                'Hungary': 'HU',
-                'Romania': 'RO',
-                'Russia': 'RU',
-                'Ukraine': 'UA',
-                'Belarus': 'BY',
-                'Argentina': 'AR',
-                'Chile': 'CL',
-                'Colombia': 'CO',
-                'Peru': 'PE',
-                'Ecuador': 'EC',
-                'Uruguay': 'UY',
-                'Paraguay': 'PY',
-                'Bolivia': 'BO',
-                'Venezuela': 'VE'
+                'United States': 'US', 'United Kingdom': 'GB', 'China': 'CN', 'Germany': 'DE',
+                'France': 'FR', 'Japan': 'JP', 'India': 'IN', 'Brazil': 'BR', 'Canada': 'CA',
+                'Australia': 'AU', 'South Korea': 'KR', 'Netherlands': 'NL', 'Mexico': 'MX',
+                'Italy': 'IT', 'Spain': 'ES', 'Turkey': 'TR', 'Indonesia': 'ID', 'Thailand': 'TH',
+                'Vietnam': 'VN', 'Bangladesh': 'BD', 'Pakistan': 'PK', 'Philippines': 'PH',
+                'Malaysia': 'MY', 'Singapore': 'SG', 'Taiwan': 'TW', 'Hong Kong': 'HK',
+                'South Africa': 'ZA', 'Egypt': 'EG', 'Morocco': 'MA', 'Nigeria': 'NG'
             }
             
             for country in countries[:5]:  # Limit for performance
-                # Map country name to World Bank code
                 wb_country = country_mapping.get(country, country)
                 
-                print(f"🌍 Fetching data for {country} (mapped to: {wb_country})")
-                
-                # World Bank API for GDP per capita
                 wb_url = f"https://api.worldbank.org/v2/country/{wb_country}/indicator/NY.GDP.PCAP.CD"
                 params = {'format': 'json', 'date': '2022:2023', 'per_page': 5}
                 
                 try:
                     response = requests.get(wb_url, params=params, timeout=15)
-                    print(f"📊 World Bank API response for {country}: {response.status_code}")
                     
                     if response.status_code == 200:
                         data = response.json()
-                        print(f"📊 Raw World Bank data length for {country}: {len(data) if data else 0}")
                         
                         if len(data) > 1 and data[1] and len(data[1]) > 0:
                             # Get the most recent data point
@@ -580,31 +1192,12 @@ class EnhancedModernSlaveryAssessment:
                                     'economic_risk_factor': 'high' if gdp_value < 5000 else 'medium' if gdp_value < 15000 else 'low'
                                 }
                                 print(f"✅ Successfully got economic data for {country}: GDP ${gdp_value:,.0f}")
-                            else:
-                                print(f"⚠️ No valid GDP data available for {country}")
-                        else:
-                            print(f"⚠️ Empty or invalid response from World Bank for {country}")
-                    else:
-                        print(f"❌ World Bank API error for {country}: {response.status_code}")
                         
                 except Exception as country_error:
                     print(f"❌ Error fetching data for {country}: {country_error}")
                 
                 time.sleep(1)  # Rate limiting
             
-            # If no real data, add some sample data for testing
-            if not economic_data and countries:
-                print("🔧 No real economic data found, adding fallback sample data")
-                # Add sample data for the first country for testing
-                sample_country = countries[0]
-                economic_data[sample_country] = {
-                    'gdp_per_capita': 25000,
-                    'year': '2022',
-                    'economic_risk_factor': 'medium'
-                }
-                print(f"🔧 Added fallback economic data for {sample_country}")
-            
-            print(f"📊 Final economic data: {len(economic_data)} countries")
             return economic_data
             
         except Exception as e:
@@ -615,7 +1208,6 @@ class EnhancedModernSlaveryAssessment:
         """Get enhanced news data with IMPROVED error handling"""
         try:
             print(f"📰 Getting news data for {company_name}")
-            
             enhanced_news = []
             
             # Try multiple approaches for news data
@@ -717,44 +1309,129 @@ class EnhancedModernSlaveryAssessment:
                 }
             ]
 
+    def get_ai_economic_analysis(self, country, gdp_data, company_context):
+        """Use AI to analyze the 'so what' of economic indicators for modern slavery risk"""
+        try:
+            print(f"🤖 AI analyzing economic implications for {country}")
+            
+            messages = [
+                {"role": "system", "content": "You are an expert in how economic conditions create modern slavery vulnerabilities. Provide specific, actionable analysis of how economic data translates to labor exploitation risks."},
+                {"role": "user", "content": f"""
+                Analyze the modern slavery risk implications of economic conditions in {country}:
+                
+                ECONOMIC DATA:
+                - GDP per capita: ${gdp_data.get('gdp_per_capita', 0):,.0f}
+                - Economic risk level: {gdp_data.get('economic_risk_factor', 'unknown')}
+                - Year: {gdp_data.get('year', 'unknown')}
+                
+                COMPANY CONTEXT:
+                - Company operations: {company_context.get('industry', 'various')} industry
+                - Supply chain presence: {company_context.get('operation_type', 'sourcing/manufacturing')}
+                
+                Provide analysis of:
+                1. HOW this economic situation creates modern slavery vulnerabilities
+                2. WHAT this means specifically for companies operating there
+                3. WHY this economic context increases labor exploitation risks
+                4. ACTIONABLE implications for supply chain management
+                
+                Respond with ONLY valid JSON:
+                {{
+                    "economic_vulnerability_analysis": "explanation of how economic conditions create modern slavery risks",
+                    "business_implications": "what this means for companies operating in this country",
+                    "specific_risks": ["risk1", "risk2", "risk3"],
+                    "recommended_actions": ["action1", "action2", "action3"],
+                    "risk_amplifiers": "why economic conditions make labor violations more likely"
+                }}
+                """}
+            ]
+            
+            ai_response = self.call_openai_api(messages, max_tokens=600, temperature=0.1)
+            
+            if ai_response:
+                try:
+                    cleaned_response = clean_json_response(ai_response)
+                    return json.loads(cleaned_response)
+                except json.JSONDecodeError as e:
+                    print(f"Error parsing AI economic analysis: {e}")
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error in AI economic analysis: {e}")
+            return None
+
     def analyze_api_risk_factors(self, enhanced_data):
-        """Analyze risk factors from API data with IMPROVED logic"""
+        """Analyze risk factors from API data with AI-enhanced 'so what' analysis"""
         risk_factors = []
         
         try:
-            # Economic risk analysis
+            # Enhanced economic risk analysis with AI interpretation
             economic_data = enhanced_data.get('economic_indicators', {})
-            for country, data in economic_data.items():
-                if data.get('economic_risk_factor') == 'high':
-                    risk_factors.append({
-                        'factor': f'Low GDP per capita in {country}',
-                        'impact': 'medium',
-                        'evidence': f'GDP per capita: ${data.get("gdp_per_capita", 0):,.0f} indicates economic vulnerability'
-                    })
-                elif data.get('economic_risk_factor') == 'medium':
-                    risk_factors.append({
-                        'factor': f'Medium economic risk in {country}',
-                        'impact': 'low',
-                        'evidence': f'GDP per capita: ${data.get("gdp_per_capita", 0):,.0f} suggests moderate economic conditions'
-                    })
+            company_context = enhanced_data.get('company_context', {})
             
-            # News risk analysis
+            for country, data in economic_data.items():
+                if data.get('economic_risk_factor') in ['high', 'medium']:
+                    print(f"🔍 Analyzing economic implications for {country}")
+                    
+                    # Get AI analysis of economic implications
+                    ai_analysis = self.get_ai_economic_analysis(country, data, company_context)
+                    
+                    if ai_analysis:
+                        # Create comprehensive risk factor with AI insights
+                        risk_factors.append({
+                            'factor': f'Economic vulnerability in {country}',
+                            'impact': 'high' if data.get('economic_risk_factor') == 'high' else 'medium',
+                            'evidence': f'GDP per capita: ${data.get("gdp_per_capita", 0):,.0f} ({data.get("economic_risk_factor", "unknown")} risk)',
+                            'vulnerability_analysis': ai_analysis.get('economic_vulnerability_analysis', ''),
+                            'business_implications': ai_analysis.get('business_implications', ''),
+                            'specific_risks': ai_analysis.get('specific_risks', []),
+                            'recommended_actions': ai_analysis.get('recommended_actions', []),
+                            'risk_amplifiers': ai_analysis.get('risk_amplifiers', ''),
+                            'data_source': 'World Bank GDP + AI Analysis'
+                        })
+                        print(f"✅ AI analysis completed for {country}")
+                    else:
+                        # Fallback to basic analysis if AI fails
+                        risk_factors.append({
+                            'factor': f'Economic vulnerability in {country}',
+                            'impact': 'medium',
+                            'evidence': f'GDP per capita: ${data.get("gdp_per_capita", 0):,.0f} indicates economic vulnerability',
+                            'vulnerability_analysis': f'Lower economic conditions in {country} may increase susceptibility to labor exploitation',
+                            'data_source': 'World Bank GDP'
+                        })
+            
+            # News risk analysis with AI interpretation
             news_data = enhanced_data.get('enhanced_news', [])
             if len(news_data) > 3:
-                risk_factors.append({
-                    'factor': 'High media attention on labor practices',
-                    'impact': 'medium',
-                    'evidence': f'Found {len(news_data)} news articles related to labor and supply chain issues'
-                })
+                # Get AI analysis of news implications
+                news_analysis = self.get_ai_news_analysis(news_data)
+                
+                if news_analysis:
+                    risk_factors.append({
+                        'factor': 'Media attention on labor practices',
+                        'impact': 'medium',
+                        'evidence': f'Found {len(news_data)} news articles related to labor and supply chain issues',
+                        'media_analysis': news_analysis.get('media_implications', ''),
+                        'reputation_risks': news_analysis.get('reputation_risks', []),
+                        'recommended_responses': news_analysis.get('recommended_responses', []),
+                        'data_source': 'GDELT News + AI Analysis'
+                    })
+                else:
+                    risk_factors.append({
+                        'factor': 'High media attention on labor practices',
+                        'impact': 'medium',
+                        'evidence': f'Found {len(news_data)} news articles related to labor and supply chain issues'
+                    })
             
-            # Tone analysis from news
+            # Tone analysis from news with AI interpretation
             if news_data:
                 negative_articles = [article for article in news_data if article.get('tone', 0) < -0.1]
                 if len(negative_articles) > 1:
                     risk_factors.append({
                         'factor': 'Negative media sentiment detected',
                         'impact': 'medium',
-                        'evidence': f'{len(negative_articles)} articles with negative tone about labor practices'
+                        'evidence': f'{len(negative_articles)} articles with negative tone about labor practices',
+                        'sentiment_analysis': 'Negative media coverage may indicate ongoing labor issues or increased scrutiny of industry practices'
                     })
         
         except Exception as e:
@@ -766,6 +1443,57 @@ class EnhancedModernSlaveryAssessment:
             })
         
         return risk_factors
+
+    def get_ai_news_analysis(self, news_data):
+        """Use AI to analyze implications of news coverage"""
+        try:
+            if not news_data or len(news_data) == 0:
+                return None
+                
+            # Prepare news summary for AI
+            news_summary = []
+            for article in news_data[:5]:  # Analyze top 5 articles
+                news_summary.append({
+                    'title': article.get('title', ''),
+                    'tone': article.get('tone', 0),
+                    'domain': article.get('domain', '')
+                })
+            
+            messages = [
+                {"role": "system", "content": "You are an expert in analyzing media coverage for corporate risk assessment. Focus on what news coverage reveals about labor practices and supply chain risks."},
+                {"role": "user", "content": f"""
+                Analyze the risk implications of this media coverage pattern:
+                
+                NEWS ARTICLES: {json.dumps(news_summary)}
+                
+                Assess:
+                1. What this media attention indicates about labor practice risks
+                2. Reputation and operational risks from this coverage
+                3. Recommended corporate responses
+                
+                Respond with ONLY valid JSON:
+                {{
+                    "media_implications": "what this coverage pattern suggests about actual risks",
+                    "reputation_risks": ["risk1", "risk2"],
+                    "recommended_responses": ["response1", "response2"]
+                }}
+                """}
+            ]
+            
+            ai_response = self.call_openai_api(messages, max_tokens=400, temperature=0.1)
+            
+            if ai_response:
+                try:
+                    cleaned_response = clean_json_response(ai_response)
+                    return json.loads(cleaned_response)
+                except json.JSONDecodeError as e:
+                    print(f"Error parsing AI news analysis: {e}")
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error in AI news analysis: {e}")
+            return None
 
     def get_fallback_enhanced_data(self, company_name, operating_countries):
         """Provide comprehensive fallback data for testing when APIs fail"""
@@ -881,24 +1609,31 @@ class EnhancedModernSlaveryAssessment:
                 fallback_data = self.get_fallback_enhanced_data(company_name, operating_countries)
                 news_data = fallback_data['enhanced_news']
             
-            # Create comprehensive enhanced data structure
+            # Create comprehensive enhanced data structure with company context for AI analysis
             enhanced_data = {
                 'economic_indicators': economic_data,
                 'enhanced_news': news_data,
+                'company_context': {
+                    'company_name': company_name,
+                    'operating_countries': operating_countries,
+                    'industry': 'various'  # Will be updated with actual industry data if available
+                },
                 'data_sources_used': [
                     'World Bank Economic Data' if has_economic_data else 'Economic Data (Fallback)',
                     'GDELT News Analysis' if has_news_data else 'News Analysis (Fallback)',
+                    'AI Economic Risk Analysis',
                     'OpenStreetMap Geocoding'
                 ]
             }
             
-            # Generate risk factors from the data
+            # Generate AI-enhanced risk factors from the data
             api_risk_factors = self.analyze_api_risk_factors(enhanced_data)
             enhanced_data['api_risk_factors'] = api_risk_factors
             
             print(f"✅ Enhanced data ready: {len(economic_data)} countries, {len(news_data)} articles, {len(api_risk_factors)} risk factors")
             print(f"📊 Economic countries: {list(economic_data.keys())}")
             print(f"📰 News articles count: {len(news_data)}")
+            print(f"🤖 AI-enhanced risk factors: {len([rf for rf in api_risk_factors if 'AI Analysis' in rf.get('data_source', '')])}")
             
             return enhanced_data
             
@@ -907,7 +1642,7 @@ class EnhancedModernSlaveryAssessment:
             print("🔧 Falling back to comprehensive fallback data")
             return self.get_fallback_enhanced_data(company_name, operating_countries)
 
-    # Dynamic Industry Benchmarking
+    # Dynamic Industry Benchmarking - RESTORED FULL VERSION
     def get_ai_industry_analysis(self, primary_industry, all_industries):
         """Use OpenAI to get comprehensive industry analysis"""
         try:
@@ -1170,7 +1905,7 @@ class EnhancedModernSlaveryAssessment:
             return "Bottom 10%"
 
     def generate_industry_comparison(self, company_score, company_industries, primary_industry):
-        """Generate dynamic industry comparison"""
+        """Generate dynamic industry comparison - FULL VERSION RESTORED"""
         try:
             # Get dynamic benchmark data
             benchmark_data = self.get_dynamic_industry_benchmark(
@@ -1178,7 +1913,30 @@ class EnhancedModernSlaveryAssessment:
             )
             
             if not benchmark_data:
-                return None
+                # Fallback to simplified version
+                industry_avg = INDUSTRY_RISK_INDEX.get(primary_industry, 50)
+                performance_vs_peers = "above average" if company_score < industry_avg else "below average"
+                score_difference = abs(company_score - industry_avg)
+                percentile = self.calculate_percentile(company_score, industry_avg)
+                
+                return {
+                    "matched_industry": primary_industry,
+                    "industry_average_score": industry_avg,
+                    "company_score": company_score,
+                    "performance_vs_peers": performance_vs_peers,
+                    "score_difference": score_difference,
+                    "percentile_ranking": percentile,
+                    "peer_companies": [],
+                    "industry_common_risks": [],
+                    "industry_best_practices": [],
+                    "regulatory_focus": [],
+                    "benchmark_insights": [
+                        f"Company risk score is {score_difference} points {'below' if performance_vs_peers == 'above average' else 'above'} industry average",
+                        f"Performance is {performance_vs_peers} compared to industry peers"
+                    ],
+                    "data_quality": "basic",
+                    "last_updated": datetime.now().strftime("%Y-%m-%d")
+                }
             
             industry_avg = benchmark_data['industry_average_score']
             performance_vs_peers = "above average" if company_score < industry_avg else "below average"
@@ -1242,11 +2000,25 @@ class EnhancedModernSlaveryAssessment:
         return insights
     
     def comprehensive_ai_analysis(self, company_data):
-        """Enhanced AI analysis with more aggressive and specific scoring"""
+        """Enhanced AI analysis that now includes modern slavery risk calculation"""
         try:
             profile = company_data['profile']
             geographic_risk = company_data['geographic_risk']
             industry_risk = company_data['industry_risk']
+            
+            # NEW: Calculate sophisticated modern slavery risk
+            modern_slavery_risk = self.calculate_modern_slavery_risk_score(
+                company_name=profile['name'],
+                country=profile.get('headquarters', 'Unknown'),
+                industry=profile.get('primary_industry', 'Unknown'),
+                product_categories=[profile.get('primary_industry', 'Unknown')],
+                workforce_demographics=None
+            )
+            
+            print(f"🎯 Modern slavery risk calculated: {modern_slavery_risk['final_risk_score']}")
+            
+            # Use the modern slavery risk as the overall risk score
+            overall_risk_score = modern_slavery_risk['final_risk_score']
             
             # Build comprehensive context for AI
             context_prompt = f"""
@@ -1266,35 +2038,17 @@ class EnhancedModernSlaveryAssessment:
             - Risk Indicators: {profile.get('risk_indicators', [])}
             
             CALCULATED RISK CONTEXT:
+            - Modern Slavery Risk Score: {overall_risk_score}/100
             - Geographic Risk: {geographic_risk['score']}/100 - {geographic_risk['details']}
             - Industry Risk: {industry_risk['score']}/100 - {industry_risk['details']}
             
             ASSESSMENT INSTRUCTIONS:
-            You are the world's leading expert on modern slavery risk assessment. Provide a comprehensive, specific, and accurate assessment based on:
-            
-            1. The company's actual business practices and controversies
-            2. Industry-specific vulnerabilities (fast fashion, agriculture, manufacturing, etc.)
-            3. Geographic risks from operations in high-risk countries
-            4. Supply chain complexity and transparency
-            5. Known incidents, investigations, or concerns
-            
-            SCORING GUIDELINES - BE SPECIFIC AND DIFFERENTIATED:
-            - Fast fashion companies (Shein, H&M, etc.): 70-95 (very high risk)
-            - Agricultural/food companies with complex supply chains: 60-85
-            - Sportswear/apparel with overseas manufacturing: 60-80  
-            - Technology companies with ethical practices: 15-35
-            - Pharmaceutical companies: 20-40
-            - Companies with strong ESG/B-Corp credentials: 15-40
-            - Companies with known modern slavery issues: 75-95
-            - Companies with transparent, ethical supply chains: 15-45
+            You are the world's leading expert on modern slavery risk assessment. The overall risk score has been calculated using sophisticated methods. Provide supporting analysis.
             
             Focus on ACTUAL RISKS not theoretical ones. Be specific about the company's business model and practices.
             
             Respond with ONLY valid JSON (no markdown):
             {{
-                "overall_risk_score": integer_15_to_95,
-                "overall_risk_level": "low|medium|high|very-high",
-                "confidence_level": "high|medium|low",
                 "category_scores": {{
                     "policy_governance": integer_0_to_100,
                     "due_diligence": integer_0_to_100,
@@ -1310,11 +2064,6 @@ class EnhancedModernSlaveryAssessment:
                     {{"description": "Specific actionable recommendation for this company", "priority": "high|medium|low", "category": "policy|due_diligence|operations|transparency"}},
                     {{"description": "Another specific recommendation based on their risk profile", "priority": "high|medium|low", "category": "policy|due_diligence|operations|transparency"}},
                     {{"description": "Third specific recommendation for improvement", "priority": "high|medium|low", "category": "policy|due_diligence|operations|transparency"}}
-                ],
-                "risk_factors": [
-                    {{"factor": "Specific risk factor for this company", "impact": "high|medium|low", "evidence": "Specific evidence or reasoning based on their operations"}},
-                    {{"factor": "Another specific risk factor", "impact": "high|medium|low", "evidence": "Specific evidence about their business model or practices"}},
-                    {{"factor": "Third risk factor", "impact": "high|medium|low", "evidence": "Specific evidence about their supply chain or geography"}}
                 ]
             }}
             """
@@ -1331,31 +2080,87 @@ class EnhancedModernSlaveryAssessment:
                     cleaned_response = clean_json_response(ai_response)
                     ai_analysis = json.loads(cleaned_response)
                     
-                    # Light adjustment based on calculated risks (AI does most of the work)
-                    base_score = ai_analysis.get('overall_risk_score', 50)
+                    # Combine with modern slavery risk data
+                    final_analysis = {
+                        'overall_risk_score': overall_risk_score,
+                        'overall_risk_level': modern_slavery_risk['risk_category'].lower().replace(' ', '-'),
+                        'confidence_level': 'high',
+                        'modern_slavery_risk': modern_slavery_risk,  # Include the full modern slavery analysis
+                        'category_scores': ai_analysis.get('category_scores', {}),
+                        'key_findings': ai_analysis.get('key_findings', []),
+                        'recommendations': ai_analysis.get('recommendations', []),
+                        'risk_factors': [
+                            {
+                                'factor': f"Modern slavery inherent risk: {modern_slavery_risk['inherent_risk']['inherent_score']}/100",
+                                'impact': 'high',
+                                'evidence': f"Based on country, industry, and operational risk factors"
+                            },
+                            {
+                                'factor': f"Company mitigation efforts: {modern_slavery_risk['residual_risk']['residual_score']}/100",
+                                'impact': 'medium', 
+                                'evidence': f"Statement quality from {modern_slavery_risk['residual_risk']['data_source']}"
+                            }
+                        ]
+                    }
                     
-                    # Only minor adjustment to incorporate geographic/industry context
-                    geo_adjustment = (geographic_risk['score'] - 50) * 0.1  # 10% influence
-                    industry_adjustment = (industry_risk['score'] - 50) * 0.1  # 10% influence
-                    
-                    adjusted_score = int(base_score + geo_adjustment + industry_adjustment)
-                    adjusted_score = min(95, max(15, adjusted_score))  # Keep in reasonable range
-                    
-                    ai_analysis['overall_risk_score'] = adjusted_score
-                    ai_analysis['overall_risk_level'] = self.score_to_level(adjusted_score)
-                    
-                    print(f"AI-powered analysis completed with score: {adjusted_score}")
-                    return ai_analysis
+                    return final_analysis
                     
                 except json.JSONDecodeError as e:
                     print(f"Error parsing AI analysis: {e}")
                     print(f"AI Response: {ai_response}")
             
-            return self.generate_fallback_assessment(company_data)
+            return self.generate_fallback_from_modern_slavery_risk(modern_slavery_risk, profile)
             
         except Exception as e:
             print(f"Error in AI analysis: {e}")
-            return self.generate_fallback_assessment(company_data)
+            # Try to calculate modern slavery risk anyway
+            try:
+                modern_slavery_risk = self.calculate_modern_slavery_risk_score(
+                    company_name=company_data['profile']['name'],
+                    country=company_data['profile'].get('headquarters', 'Unknown'),
+                    industry=company_data['profile'].get('primary_industry', 'Unknown')
+                )
+                return self.generate_fallback_from_modern_slavery_risk(modern_slavery_risk, company_data['profile'])
+            except:
+                return self.generate_fallback_assessment(company_data)
+
+    def generate_fallback_from_modern_slavery_risk(self, modern_slavery_risk, profile):
+        """Generate fallback assessment based on modern slavery risk calculation"""
+        score = modern_slavery_risk['final_risk_score']
+        
+        return {
+            'overall_risk_score': score,
+            'overall_risk_level': modern_slavery_risk['risk_category'].lower().replace(' ', '-'),
+            'confidence_level': 'medium',
+            'modern_slavery_risk': modern_slavery_risk,
+            'category_scores': {
+                'policy_governance': score,
+                'due_diligence': score,
+                'operational_practices': score,
+                'transparency': score
+            },
+            'key_findings': [
+                {
+                    'description': f"Modern slavery risk score of {score} based on sophisticated calculation",
+                    'severity': 'high' if score > 70 else 'medium' if score > 40 else 'low',
+                    'category': 'assessment'
+                }
+            ],
+            'recommendations': [
+                {
+                    'description': 'Conduct comprehensive modern slavery risk assessment',
+                    'priority': 'high',
+                    'category': 'due_diligence'
+                }
+            ],
+            'risk_factors': [
+                {
+                    'factor': f"Inherent risk factors score: {modern_slavery_risk['inherent_risk']['inherent_score']}",
+                    'impact': 'high',
+                    'evidence': 'Based on country, industry, and operational factors'
+                }
+            ]
+        }
     
     def score_to_level(self, score):
         """Enhanced risk level distribution"""
@@ -1497,6 +2302,9 @@ class EnhancedModernSlaveryAssessment:
                 'overall_risk_score': ai_analysis['overall_risk_score'],
                 'confidence_level': ai_analysis.get('confidence_level', 'high'),
                 
+                # NEW: Modern slavery risk prominently featured
+                'modern_slavery_risk': ai_analysis.get('modern_slavery_risk', {}),
+                
                 'category_scores': ai_analysis.get('category_scores', {}),
                 'geographic_risk': {
                     'score': geo_risk_score,
@@ -1539,6 +2347,7 @@ class EnhancedModernSlaveryAssessment:
             print(f"   - economic_indicators: {len(final_assessment.get('enhanced_data', {}).get('economic_indicators', {}))}")
             print(f"   - enhanced_news: {len(final_assessment.get('enhanced_data', {}).get('enhanced_news', []))}")
             print(f"   - data_sources_used: {len(final_assessment.get('enhanced_data', {}).get('data_sources_used', []))}")
+            print(f"🎯 Modern slavery risk score: {ai_analysis.get('modern_slavery_risk', {}).get('final_risk_score', 'N/A')}")
             
             return final_assessment
             
@@ -1562,6 +2371,11 @@ class EnhancedModernSlaveryAssessment:
             "overall_risk_score": fallback_score,
             "overall_risk_level": self.score_to_level(fallback_score),
             "confidence_level": "low",
+            "modern_slavery_risk": {
+                "final_risk_score": fallback_score,
+                "risk_category": "Medium",
+                "data_coverage": {"ai_enhanced": True, "fallback": True}
+            },
             "category_scores": {
                 "policy_governance": fallback_score,
                 "due_diligence": fallback_score,
@@ -1604,6 +2418,93 @@ def assess_company():
         print(f"API Error: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/assess-modern-slavery', methods=['POST'])
+def assess_modern_slavery_only():
+    """Direct modern slavery risk assessment endpoint"""
+    try:
+        data = request.get_json()
+        company_name = data.get('company_name')
+        country = data.get('country', 'Unknown')
+        industry = data.get('industry', 'Unknown')
+        
+        if not company_name:
+            return jsonify({'error': 'Company name required'}), 400
+        
+        print(f"Direct modern slavery assessment for: {company_name}")
+        
+        assessor = EnhancedModernSlaveryAssessment()
+        modern_slavery_risk = assessor.calculate_modern_slavery_risk_score(
+            company_name=company_name,
+            country=country,
+            industry=industry
+        )
+        
+        return jsonify({
+            'company_name': company_name,
+            'modern_slavery_risk': modern_slavery_risk,
+            'assessment_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+        
+    except Exception as e:
+        print(f"Modern slavery assessment error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/test-modern-slavery-data', methods=['GET'])
+def test_modern_slavery_data():
+    """Test endpoint to verify modern slavery datasets are loaded"""
+    try:
+        assessor = EnhancedModernSlaveryAssessment()
+        
+        data_status = {
+            'inherent_datasets': {},
+            'residual_datasets': {},
+            'total_records': 0
+        }
+        
+        # Check inherent data
+        for key, df in assessor.data_loader.inherent_data.items():
+            if df is not None and not df.empty:
+                data_status['inherent_datasets'][key] = {
+                    'loaded': True,
+                    'records': len(df),
+                    'columns': list(df.columns)
+                }
+                data_status['total_records'] += len(df)
+            else:
+                data_status['inherent_datasets'][key] = {'loaded': False}
+        
+        # Check residual data
+        for key, df in assessor.data_loader.residual_data.items():
+            if df is not None and not df.empty:
+                data_status['residual_datasets'][key] = {
+                    'loaded': True,
+                    'records': len(df),
+                    'columns': list(df.columns)
+                }
+                data_status['total_records'] += len(df)
+            else:
+                data_status['residual_datasets'][key] = {'loaded': False}
+        
+        # Test calculation
+        test_risk = assessor.calculate_modern_slavery_risk_score(
+            company_name="Test Company",
+            country="China",
+            industry="Textiles and Apparel"
+        )
+        
+        return jsonify({
+            'status': 'success',
+            'data_status': data_status,
+            'test_calculation': test_risk
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'message': 'Modern slavery data testing failed'
+        })
+
 @app.route('/test-openai', methods=['GET'])
 def test_openai():
     try:
@@ -1631,6 +2532,11 @@ def get_status():
         'status': 'healthy',
         'message': 'Enhanced AI-Powered Modern Slavery Assessment API with Industry Benchmarking & Mapping',
         'features': [
+            '✨ NEW: Sophisticated Modern Slavery Risk Model',
+            '📊 Formula: 0.75 × Inherent Risk + 0.25 × (100 - Residual Risk × 4)',
+            '📈 Inherent Risk: TIP Tiers + GSI Prevalence + Gov Response + Industry + Products + Labor Issues',
+            '📋 Residual Risk: UK/Australian/BHR Registry Analysis + AI Assessment',
+            '🤖 AI Gap-Filling: When datasets incomplete, AI provides estimates',
             'GPT-4o powered intelligent analysis',
             'Dynamic industry benchmarking with real data',
             'Global manufacturing mapping',
@@ -1641,8 +2547,15 @@ def get_status():
             'Free API data integration (World Bank, GDELT, OpenStreetMap)',
             'Differentiated risk scoring (15-95 range)',
             'Company-specific intelligence gathering',
-            'FIXED: Guaranteed enhanced data with fallbacks'
+            'COMPLETE: Guaranteed enhanced data with fallbacks'
         ],
+        'modern_slavery_model': {
+            'formula': '0.75 × Inherent Risk + 0.25 × (100 - Residual Risk × 4)',
+            'inherent_components': ['TIP Tiers', 'GSI Prevalence', 'Government Response', 'Industry Risk', 'Product Risk', 'Labor Issues'],
+            'residual_sources': ['UK Government Registry', 'Australian Government Registry', 'BHR Registry', 'AI Assessment'],
+            'ai_gap_filling': True,
+            'datasets_supported': ['Country_Tiers_with_Continents.csv', 'Full_Modern_Slavery_Prevalence_Table.csv', 'Government Response Score by Country and Milestone.csv', 'Top five products at risk of modern slavery per G20 Country.csv', 'US_Labour_Issues.csv', 'uk_statements_registry_2025.csv', 'aus_modern_slavery_registry.csv', 'bhr_modern_slavery_registry.csv']
+        },
         'api_keys_configured': {
             'openai': bool(current_openai_key and len(current_openai_key) > 20),
             'serper': bool(current_serper_key and len(current_serper_key) > 10),
@@ -1705,17 +2618,23 @@ if __name__ == '__main__':
     print("🔑 Serper API Key configured:", "✅" if startup_serper_key and len(startup_serper_key) > 10 else "❌")
     print("🔑 News API Key configured:", "✅" if startup_news_key and len(startup_news_key) > 10 else "❌")
     print("🧠 Using GPT-4o for intelligent, differentiated risk assessment")
-    print("🎯 Enhanced Features:")
-    print("   - Comprehensive company intelligence gathering")
-    print("   - Dynamic industry benchmarking with real data")
-    print("   - Global manufacturing mapping with geocoding")
-    print("   - Advanced geographic & industry risk calculation")
-    print("   - AI-powered specific risk analysis")
-    print("   - Free API integration (World Bank, GDELT, OpenStreetMap)")
-    print("   - Supply chain visualization and mapping")
-    print("   - Differentiated scoring (15-95 range)")
-    print("   - Fixed risk level thresholds for better differentiation")
-    print("   - ✨ FIXED: Guaranteed enhanced data with comprehensive fallbacks")
+    print("🎯 Enhanced Features - FULL VERSION RESTORED:")
+    print("   ✨ Sophisticated Modern Slavery Risk Model")
+    print("   📊 Formula: 0.75 × Inherent Risk + 0.25 × (100 - Residual Risk × 4)")
+    print("   📈 Inherent Risk: TIP Tiers + GSI Prevalence + Gov Response + Industry + Products + Labor Issues")
+    print("   📋 Residual Risk: UK/Australian/BHR Registry Analysis + AI Assessment")
+    print("   🤖 AI Gap-Filling: When datasets don't have data, AI provides estimates")
+    print("   🔍 Smart Data Loading: Reads from Data/Inherent/ and Data/Residual/ folders")
+    print("   📊 Comprehensive company intelligence gathering")
+    print("   🗺️ Dynamic industry benchmarking with real data")
+    print("   🌍 Global manufacturing mapping with geocoding")
+    print("   📈 Advanced geographic & industry risk calculation")
+    print("   🤖 AI-powered specific risk analysis")
+    print("   🔗 Free API integration (World Bank, GDELT, OpenStreetMap)")
+    print("   📊 Supply chain visualization and mapping")
+    print("   🎯 Differentiated scoring (15-95 range)")
+    print("   ⚖️ Fixed risk level thresholds for better differentiation")
+    print("   ✨ COMPLETE: Guaranteed enhanced data with comprehensive fallbacks")
     print("🌐 Ready for comprehensive AI-powered assessments with mapping and benchmarking!")
     
     port = int(os.environ.get('PORT', 5000))

@@ -1,0 +1,177 @@
+Country,Survivors_Supported,Criminal_Justice,Coordination,Risk_Factors,Supply_Chains,Total_Policy_Score
+United Kingdom,59,81,75,71,38,68
+Netherlands,77,62,88,64,38,67
+Portugal,73,73,75,64,25,67
+Ireland,59,69,88,64,25,63
+Norway,55,73,75,64,38,63
+Spain,55,73,75,71,25,63
+Sweden,59,69,63,79,25,63
+Albania,55,69,75,79,13,62
+Austria,59,65,75,71,25,62
+Denmark,64,65,75,64,25,62
+France,41,81,88,57,38,62
+Georgia,68,65,75,71,0,62
+Germany,50,81,63,57,38,62
+Greece,68,62,75,64,25,62
+Finland,55,62,88,71,25,60
+Montenegro,68,73,63,57,0,60
+Azerbaijan,64,69,63,64,0,59
+Belgium,45,65,75,71,38,59
+Croatia,59,65,75,64,13,59
+Czechia,59,62,88,57,25,59
+Italy,50,65,63,79,25,59
+Latvia,64,65,63,57,25,59
+Bosnia and Herzegovina,68,65,63,57,0,58
+Cyprus,64,62,63,57,25,58
+Lithuania,59,65,50,64,25,58
+North Macedonia,68,65,75,50,0,58
+Romania,59,65,75,50,25,58
+Slovakia,50,62,63,79,25,58
+Estonia,59,46,75,79,25,56
+Serbia,64,69,63,50,0,56
+Slovenia,50,65,63,64,25,56
+Bulgaria,50,65,63,57,25,55
+Hungary,50,58,63,71,25,55
+Poland,50,65,75,50,25,55
+Armenia,64,58,75,50,0,54
+Luxembourg,50,62,50,50,25,51
+Ukraine,64,54,63,50,0,51
+Switzerland,50,50,50,64,25,50
+Malta,64,58,38,29,25,49
+Turkey,64,54,63,36,0,49
+Belarus,64,50,38,50,0,47
+Iceland,55,50,38,50,25,47
+Kyrgyzstan,41,65,63,43,0,47
+Moldova,45,50,63,57,13,47
+Kazakhstan,45,50,50,64,0,46
+Uzbekistan,45,54,50,57,0,46
+Israel,41,50,63,57,0,45
+Kosovo,59,50,50,36,0,45
+Tajikistan,23,54,50,36,0,36
+Liechtenstein,27,42,25,29,13,31
+Turkmenistan,14,46,25,21,0,26
+Russia,5,46,38,21,0,24
+Australia,64,69,75,79,38,67
+Philippines,59,73,75,50,13,59
+Thailand,50,65,75,64,0,55
+New Zealand,45,65,50,64,25,54
+Indonesia,45,65,50,57,0,50
+Bangladesh,41,69,50,50,0,49
+Sri Lanka,45,65,50,50,0,49
+Singapore,55,54,38,57,0,47
+Taiwan,45,36,63,79,13,47
+Viet Nam,64,46,75,36,0,47
+Fiji,50,50,38,64,0,46
+India,36,58,75,50,0,46
+Laos,59,50,50,43,0,46
+Malaysia,41,58,50,50,0,45
+Nepal,36,58,63,50,0,45
+Japan,45,42,63,57,0,44
+Cambodia,41,46,75,43,0,42
+Myanmar,50,42,75,36,0,42
+China,41,46,50,36,13,40
+Mongolia,36,54,25,43,13,40
+South Korea,41,46,50,36,0,38
+Maldives,41,38,38,50,0,37
+Pakistan,36,42,50,43,0,37
+Brunei Darussalam,27,42,25,57,0,35
+Timor-Leste,32,42,50,36,0,35
+Hong Kong,27,35,38,50,0,32
+Papua New Guinea,23,42,50,29,0,31
+Solomon Islands,14,42,50,43,0,31
+Palau,27,31,25,36,0,27
+Vanuatu,9,38,50,29,0,26
+Iran,5,19,25,0,0,8
+North Korea,9,8,13,21,0,3
+Bahrain,77,50,63,57,0,55
+United Arab Emirates,59,42,75,64,0,50
+Qatar,59,42,63,64,0,49
+Saudi Arabia,59,54,63,43,0,49
+Jordan,50,54,50,50,0,46
+Oman,41,38,50,50,0,38
+Kuwait,36,42,50,43,0,37
+Iraq,41,38,38,29,0,33
+Lebanon,32,42,50,29,0,33
+United States,86,62,63,64,38,67
+Canada,59,58,75,79,25,60
+Argentina,50,73,75,64,0,58
+Uruguay,55,73,50,64,0,56
+Chile,55,69,50,64,0,55
+Mexico,50,65,88,57,0,55
+Peru,59,65,63,57,0,55
+Bahamas,68,65,25,50,0,53
+Brazil,45,50,75,57,38,51
+Costa Rica,50,62,63,50,13,51
+Ecuador,50,58,63,57,13,51
+Guyana,50,65,63,50,0,51
+Jamaica,41,62,88,57,0,51
+Panama,41,65,50,71,0,51
+Saint Lucia,45,69,50,57,0,51
+Paraguay,41,69,63,43,0,49
+Trinidad and Tobago,50,65,63,36,0,49
+Bolivia,32,58,75,57,13,47
+Guatemala,59,50,63,43,0,47
+Honduras,45,54,50,64,0,47
+Colombia,45,46,63,57,13,46
+Dominican Republic,32,62,63,57,0,46
+Belize,50,58,38,43,0,45
+El Salvador,45,58,50,43,0,45
+Saint Vincent and the Grenadines,59,50,63,29,0,45
+Antigua and Barbuda,36,54,63,50,0,44
+Barbados,36,54,38,50,0,41
+Haiti,41,38,38,50,0,37
+Nicaragua,27,50,38,43,0,36
+Cuba,27,38,50,29,0,31
+Suriname,36,35,25,36,0,31
+Venezuela,14,46,25,29,0,27
+Nigeria,68,58,50,57,0,54
+South Africa,45,69,63,57,0,53
+Rwanda,55,62,38,57,0,50
+Tunisia,50,54,50,57,0,47
+Kenya,55,50,50,50,0,46
+Uganda,50,50,75,43,0,46
+Ethiopia,41,54,50,57,0,45
+Ghana,45,54,63,36,13,45
+Mozambique,50,54,50,43,0,45
+Zambia,50,46,50,57,0,45
+Angola,59,46,63,29,0,44
+Egypt,55,42,38,57,0,44
+Namibia,55,46,25,57,0,44
+Botswana,32,54,63,50,0,42
+Madagascar,41,65,25,36,0,42
+Tanzania,45,54,50,36,0,42
+Cameroon,55,46,38,36,0,41
+Liberia,50,42,50,43,0,41
+Benin,32,54,50,43,0,40
+Lesotho,36,50,50,43,0,40
+Morocco,23,54,50,57,0,40
+Senegal,36,50,63,36,0,40
+Malawi,55,46,38,21,0,38
+Côte d’Ivoire,18,50,63,43,13,37
+Niger,23,54,50,43,0,37
+Algeria,23,54,38,43,0,36
+Burkina Faso,45,42,38,29,0,36
+Democratic Republic of the Congo,32,42,50,36,13,36
+Djibouti,41,46,38,29,0,36
+Eswatini,27,38,50,57,0,36
+Gambia,23,58,25,43,0,36
+Guinea,36,50,38,29,0,36
+Mauritius,32,50,25,43,0,36
+Mauritania,27,54,38,29,0,35
+Guinea-Bissau,32,35,25,57,0,33
+Seychelles,23,46,38,43,0,33
+Sierra Leone,27,46,38,36,0,33
+Togo,27,42,38,43,0,33
+Cabo Verde,23,35,50,43,0,31
+Mali,23,50,50,14,0,31
+Burundi,23,42,63,14,0,29
+Republic of the Congo,41,27,38,21,0,28
+Central African Republic,23,42,25,21,0,27
+Zimbabwe,27,35,38,21,0,27
+Sudan,9,46,38,21,0,26
+Chad,14,38,13,36,0,24
+Gabon,27,31,25,21,0,24
+Equatorial Guinea,27,27,25,14,0,22
+Somalia,9,27,25,21,0,18
+Libya,-9,35,25,-7,0,10
+Eritrea,-5,23,25,-21,0,5

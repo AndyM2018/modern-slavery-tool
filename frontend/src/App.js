@@ -1,16 +1,5 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 import './App.css';
-
-// Fix for default markers in react-leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
 
 // Helper function to capitalize first letter
 const capitalizeFirst = (str) => {
@@ -33,9 +22,18 @@ const exportToExcel = (results, companyName) => {
     ['Manufacturing Sites:', results.manufacturing_locations ? results.manufacturing_locations.length : 0],
     ['Data Sources:', results.data_sources ? Object.values(results.data_sources).reduce((a, b) => a + b, 0) : 0],
     [''],
-    ['Key Findings:'],
+    ['Modern Slavery Risk Details:'],
   ];
 
+  if (results.modern_slavery_risk) {
+    overviewData.push(['Modern Slavery Score:', `${results.modern_slavery_risk.final_risk_score}/100`]);
+    overviewData.push(['Risk Category:', results.modern_slavery_risk.risk_category]);
+    overviewData.push(['Inherent Risk:', `${results.modern_slavery_risk.inherent_risk?.inherent_score || 'N/A'}/100`]);
+    overviewData.push(['Residual Risk:', `${results.modern_slavery_risk.residual_risk?.residual_score || 'N/A'}/100`]);
+    overviewData.push(['Data Source:', results.modern_slavery_risk.residual_risk?.data_source || 'Unknown']);
+  }
+
+  overviewData.push([''], ['Key Findings:']);
   if (results.key_findings && results.key_findings.length > 0) {
     results.key_findings.forEach((finding, index) => {
       const findingText = typeof finding === 'string' ? finding : finding.description;
@@ -61,6 +59,32 @@ const exportToExcel = (results, companyName) => {
   }
 
   workbookData.push({ name: 'Overview', data: overviewData });
+
+  // Modern Slavery Risk Sheet
+  if (results.modern_slavery_risk) {
+    const modernSlaveryData = [
+      ['Modern Slavery Risk Analysis'],
+      ['Final Risk Score:', `${results.modern_slavery_risk.final_risk_score}/100`],
+      ['Risk Category:', results.modern_slavery_risk.risk_category],
+      ['Calculation Method:', results.modern_slavery_risk.calculation_method || 'N/A'],
+      [''],
+      ['Inherent Risk Breakdown:'],
+      ['Total Inherent Score:', `${results.modern_slavery_risk.inherent_risk?.inherent_score || 'N/A'}/100`],
+    ];
+
+    if (results.modern_slavery_risk.inherent_risk?.components) {
+      Object.entries(results.modern_slavery_risk.inherent_risk.components).forEach(([component, value]) => {
+        modernSlaveryData.push([capitalizeFirst(component.replace(/_/g, ' ')) + ':', value]);
+      });
+    }
+
+    modernSlaveryData.push([''], ['Residual Risk (Mitigation):']);
+    modernSlaveryData.push(['Statement Quality Score:', `${results.modern_slavery_risk.residual_risk?.residual_score || 'N/A'}/100`]);
+    modernSlaveryData.push(['Has Statement:', results.modern_slavery_risk.residual_risk?.has_statement ? 'Yes' : 'No']);
+    modernSlaveryData.push(['Data Source:', results.modern_slavery_risk.residual_risk?.data_source || 'Unknown']);
+
+    workbookData.push({ name: 'Modern Slavery Risk', data: modernSlaveryData });
+  }
 
   // Industry Benchmarking Sheet
   if (results.industry_benchmarking) {
@@ -160,13 +184,111 @@ const exportToExcel = (results, companyName) => {
   document.body.removeChild(link);
 };
 
-// UPDATED: Risk Factors Grouped Component
+// NEW: Modern Slavery Risk Component (using your existing CSS classes)
+const ModernSlaveryRisk = ({ modernSlaveryData }) => {
+  if (!modernSlaveryData) return (
+    <div className="section">
+      <div className="no-data">
+        <p>🎯 Modern slavery risk data not available</p>
+      </div>
+    </div>
+  );
+
+  const { final_risk_score, risk_category, inherent_risk, residual_risk, calculation_method, data_coverage } = modernSlaveryData;
+
+  const getRiskColor = (score) => {
+    if (score >= 75) return '#dc3545';
+    if (score >= 60) return '#fd7e14';
+    if (score >= 40) return '#ffc107';
+    if (score >= 25) return '#28a745';
+    return '#20c997';
+  };
+
+  return (
+    <div className="section">
+      <h3>🎯 Modern Slavery Risk Assessment</h3>
+      
+      {/* Risk Score Overview using your existing CSS grid structure */}
+      <div className="risk-overview">
+        <div className="risk-card">
+          <h3>Final Risk Score</h3>
+          <div className="risk-score" style={{ color: getRiskColor(final_risk_score) }}>
+            {final_risk_score}
+            <span className="score-max">/100</span>
+          </div>
+        </div>
+        
+        <div className="risk-card">
+          <h3>Risk Category</h3>
+          <div 
+            className="risk-badge"
+            style={{ backgroundColor: getRiskColor(final_risk_score) }}
+          >
+            {risk_category}
+          </div>
+        </div>
+        
+        <div className="risk-card">
+          <h3>Inherent Risk</h3>
+          <div className="risk-score">
+            {inherent_risk?.inherent_score || 'N/A'}
+            <span className="score-max">/100</span>
+          </div>
+        </div>
+
+        <div className="risk-card">
+          <h3>Residual Risk</h3>
+          <div className="risk-score">
+            {residual_risk?.residual_score || 'N/A'}
+            <span className="score-max">/100</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Risk Breakdown Details */}
+      <div className="details-grid">
+        <div className="detail-item">
+          <strong>Assessment Method:</strong> Comprehensive modern slavery risk analysis combining country and industry level risks with company mitigation efforts
+        </div>
+        <div className="detail-item">
+          <strong>Statement Found:</strong> {residual_risk?.has_statement ? 'Yes' : 'No'}
+        </div>
+        <div className="detail-item">
+          <strong>Data Source:</strong> {residual_risk?.data_source || 'Unknown'}
+        </div>
+        {data_coverage?.ai_enhanced && (
+          <div className="detail-item">
+            <strong>AI Enhanced:</strong> Yes
+          </div>
+        )}
+      </div>
+
+      {/* Inherent Risk Components */}
+      {inherent_risk?.components && (
+        <div className="section">
+          <h4>Inherent Risk Components</h4>
+          <div className="details-grid">
+            {Object.entries(inherent_risk.components).map(([component, value]) => (
+              <div key={component} className="detail-item">
+                <strong>{capitalizeFirst(component.replace(/_/g, ' '))}:</strong> {value}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ENHANCED: Risk Factors Grouped Component with Modern Slavery grouping (keeping your CSS)
 const RiskFactorsGrouped = ({ riskFactors }) => {
   if (!riskFactors || riskFactors.length === 0) return null;
 
-  // Group risk factors by category
+  // Enhanced grouping with Modern Slavery category
   const groupRiskFactors = (factors) => {
     const groups = {
+      modern_slavery: [],
+      economic: [],
       operational: [],
       geographic: [],
       governance: [],
@@ -177,29 +299,46 @@ const RiskFactorsGrouped = ({ riskFactors }) => {
       const factorText = factor.factor || factor;
       const lowerText = factorText.toLowerCase();
 
-      // Categorize based on keywords
-      if (lowerText.includes('supply chain') || 
-          lowerText.includes('manufacturing') || 
-          lowerText.includes('labor') || 
-          lowerText.includes('worker') || 
-          lowerText.includes('operational') ||
-          lowerText.includes('production')) {
+      // Modern slavery specific factors
+      if (lowerText.includes('modern slavery') || 
+          lowerText.includes('forced labor') || 
+          lowerText.includes('inherent risk') || 
+          lowerText.includes('residual risk') ||
+          lowerText.includes('tip tier') ||
+          lowerText.includes('gsi prevalence')) {
+        groups.modern_slavery.push(factor);
+      }
+      // Economic factors  
+      else if (lowerText.includes('economic') || 
+               lowerText.includes('gdp') || 
+               lowerText.includes('vulnerability') ||
+               lowerText.includes('financial')) {
+        groups.economic.push(factor);
+      }
+      // Operational factors
+      else if (lowerText.includes('supply chain') || 
+               lowerText.includes('manufacturing') || 
+               lowerText.includes('labor') || 
+               lowerText.includes('worker') || 
+               lowerText.includes('operational') ||
+               lowerText.includes('production')) {
         groups.operational.push(factor);
-      } else if (lowerText.includes('country') || 
-                 lowerText.includes('geographic') || 
-                 lowerText.includes('gdp') || 
-                 lowerText.includes('economic') ||
-                 lowerText.includes('region')) {
+      }
+      // Geographic factors
+      else if (lowerText.includes('country') || 
+               lowerText.includes('geographic') || 
+               lowerText.includes('region')) {
         groups.geographic.push(factor);
-      } else if (lowerText.includes('policy') || 
-                 lowerText.includes('governance') || 
-                 lowerText.includes('compliance') || 
-                 lowerText.includes('transparency') ||
-                 lowerText.includes('audit') ||
-                 lowerText.includes('reporting')) {
+      }
+      // Governance factors
+      else if (lowerText.includes('policy') || 
+               lowerText.includes('governance') || 
+               lowerText.includes('compliance') || 
+               lowerText.includes('transparency') ||
+               lowerText.includes('audit') ||
+               lowerText.includes('reporting')) {
         groups.governance.push(factor);
       } else {
-        // Default to business model risks
         groups.business_model.push(factor);
       }
     });
@@ -230,6 +369,47 @@ const RiskFactorsGrouped = ({ riskFactors }) => {
                 <div style={{fontSize: '0.9rem', color: '#555', marginTop: '5px'}}>
                   <strong>Evidence:</strong> {riskFactor.evidence}
                 </div>
+                
+                {/* Enhanced AI analysis fields */}
+                {riskFactor.vulnerability_analysis && (
+                  <div style={{fontSize: '0.9rem', color: '#555', marginTop: '8px'}}>
+                    <strong>🤖 AI Vulnerability Analysis:</strong> {riskFactor.vulnerability_analysis}
+                  </div>
+                )}
+
+                {riskFactor.business_implications && (
+                  <div style={{fontSize: '0.9rem', color: '#555', marginTop: '8px'}}>
+                    <strong>💼 Business Implications:</strong> {riskFactor.business_implications}
+                  </div>
+                )}
+
+                {riskFactor.specific_risks && riskFactor.specific_risks.length > 0 && (
+                  <div style={{fontSize: '0.9rem', color: '#555', marginTop: '8px'}}>
+                    <strong>⚠️ Specific Risks:</strong>
+                    <ul style={{margin: '4px 0', paddingLeft: '20px'}}>
+                      {riskFactor.specific_risks.map((risk, i) => (
+                        <li key={i}>{risk}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {riskFactor.recommended_actions && riskFactor.recommended_actions.length > 0 && (
+                  <div style={{fontSize: '0.9rem', color: '#555', marginTop: '8px'}}>
+                    <strong>✅ Recommended Actions:</strong>
+                    <ul style={{margin: '4px 0', paddingLeft: '20px'}}>
+                      {riskFactor.recommended_actions.map((action, i) => (
+                        <li key={i}>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {riskFactor.data_source && (
+                  <div style={{fontSize: '0.8rem', color: '#888', marginTop: '8px', fontStyle: 'italic'}}>
+                    Source: {riskFactor.data_source}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -242,6 +422,8 @@ const RiskFactorsGrouped = ({ riskFactors }) => {
     <div className="section">
       <h3>⚠️ Risk Factors</h3>
       <div className="risk-groups-container">
+        {renderRiskGroup("🎯 Modern Slavery Factors", "🎯", groupedFactors.modern_slavery, "modern_slavery")}
+        {renderRiskGroup("💰 Economic Risks", "💰", groupedFactors.economic, "economic")}
         {renderRiskGroup("Operational Risks", "🏭", groupedFactors.operational, "operational")}
         {renderRiskGroup("Geographic Risks", "🌍", groupedFactors.geographic, "geographic")}
         {renderRiskGroup("Governance Risks", "📋", groupedFactors.governance, "governance")}
@@ -251,7 +433,7 @@ const RiskFactorsGrouped = ({ riskFactors }) => {
   );
 };
 
-// IMPROVED: Industry Benchmarking Component
+// IMPROVED: Industry Benchmarking Component (keeping your existing CSS classes)
 const IndustryBenchmarking = ({ benchmarkData }) => {
   if (!benchmarkData) return null;
 
@@ -276,7 +458,7 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
       <h3>📊 Industry Benchmarking</h3>
       
       <div className="benchmark-overview">
-        {/* IMPROVED: Better Industry Header */}
+        {/* Industry Header using your existing CSS */}
         <div className="industry-header-card">
           <div className="industry-title">
             <h4>Industry: {benchmarkData.matched_industry}</h4>
@@ -286,7 +468,7 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
           </div>
         </div>
 
-        {/* IMPROVED: Better Score Comparison Layout */}
+        {/* Score Comparison using your existing CSS */}
         <div className="score-comparison-improved">
           <div className="score-card company-score-card">
             <div className="score-header">
@@ -331,7 +513,7 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
           </div>
         </div>
 
-        {/* IMPROVED: Performance Summary Card */}
+        {/* Performance Summary using your existing CSS */}
         <div className="performance-summary-card">
           <div className="performance-result">
             <span className="performance-label">Performance vs Peers:</span>
@@ -356,7 +538,7 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
           </div>
         </div>
 
-        {/* IMPROVED: Key Insights Card */}
+        {/* Key Insights using your existing CSS */}
         {benchmarkData.benchmark_insights && benchmarkData.benchmark_insights.length > 0 && (
           <div className="insights-card">
             <h5>🔍 Key Insights</h5>
@@ -368,7 +550,7 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
           </div>
         )}
 
-        {/* IMPROVED: Industry Details Grid */}
+        {/* Industry Details Grid using your existing CSS */}
         <div className="industry-details-grid">
           <div className="detail-card peer-companies-card">
             <h5>🏢 Industry Peer Companies</h5>
@@ -413,7 +595,7 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
           </div>
         </div>
 
-        {/* IMPROVED: Metadata Footer */}
+        {/* Metadata Footer using your existing CSS */}
         <div className="benchmark-metadata-improved">
           <div className="metadata-item">
             <span className="metadata-label">Last Updated:</span>
@@ -433,7 +615,7 @@ const IndustryBenchmarking = ({ benchmarkData }) => {
   );
 };
 
-// Manufacturing Map Component
+// Manufacturing Locations Component (Card-based view using your existing CSS)
 const ManufacturingMap = ({ mapData, locations }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
 
@@ -452,36 +634,11 @@ const ManufacturingMap = ({ mapData, locations }) => {
     return '#28a745';
   };
 
-  const createCustomIcon = (riskScore, facilityType) => {
-    const color = getRiskColor(riskScore);
-    const size = facilityType === 'manufacturing' ? 25 : 20;
-    
-    return L.divIcon({
-      className: 'custom-marker',
-      html: `<div style="background-color: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-      iconSize: [size, size],
-      iconAnchor: [size/2, size/2]
-    });
+  const getRiskLevel = (riskScore) => {
+    if (riskScore > 75) return 'High';
+    if (riskScore > 50) return 'Medium';
+    return 'Low';
   };
-
-  // Calculate map center based on locations
-  const validLocations = locations.filter(loc => 
-    loc.coordinates && 
-    typeof loc.coordinates.lat === 'number' && 
-    typeof loc.coordinates.lng === 'number'
-  );
-
-  if (validLocations.length === 0) {
-    return (
-      <div className="section">
-        <h3>🗺️ Global Manufacturing Locations</h3>
-        <div className="no-data">Location coordinates not available</div>
-      </div>
-    );
-  }
-
-  const centerLat = validLocations.reduce((sum, loc) => sum + loc.coordinates.lat, 0) / validLocations.length;
-  const centerLng = validLocations.reduce((sum, loc) => sum + loc.coordinates.lng, 0) / validLocations.length;
 
   return (
     <div className="section manufacturing-map">
@@ -510,102 +667,143 @@ const ManufacturingMap = ({ mapData, locations }) => {
         </div>
       )}
 
-      <div className="map-container">
-        <MapContainer
-          center={[centerLat, centerLng]}
-          zoom={2}
-          style={{ height: '500px', width: '100%', borderRadius: '8px' }}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-          
-          {validLocations.map((location, index) => (
-            <Marker
-              key={index}
-              position={[location.coordinates.lat, location.coordinates.lng]}
-              icon={createCustomIcon(location.country_risk_score || 50, location.facility_type)}
-              eventHandlers={{
-                click: () => setSelectedLocation(location)
-              }}
-            >
-              <Popup 
-                offset={[0, 10]}
-                className="custom-popup"
-                maxWidth={250}
-                minWidth={200}
-                autoPan={true}
-                autoPanPadding={[10, 10]}
-                closeButton={true}
-                autoClose={false}
-                closeOnEscapeKey={true}
-              >
-                <div className="location-popup">
-                  <h4>{location.city}, {location.country}</h4>
-                  <p><strong>Type:</strong> {capitalizeFirst(location.facility_type)}</p>
-                  <p><strong>Products:</strong> {capitalizeFirst(location.products)}</p>
-                  <p><strong>Risk Level:</strong> 
-                    <span 
-                      className="risk-badge"
-                      style={{ backgroundColor: getRiskColor(location.country_risk_score || 50) }}
+      {/* Location Cards Grid using your existing CSS structure */}
+      <div className="risk-groups-container">
+        {locations.map((location, index) => {
+          const riskScore = location.country_risk_score || 50;
+          const riskColor = getRiskColor(riskScore);
+          const riskLevel = getRiskLevel(riskScore);
+
+          return (
+            <div key={index} className="risk-group" style={{ border: `3px solid ${riskColor}` }}>
+              <h5 className="risk-group-title" style={{ backgroundColor: riskColor, color: 'white' }}>
+                📍 {location.city}, {location.country}
+                <span style={{ float: 'right', fontSize: '0.8em' }}>{riskLevel} Risk</span>
+              </h5>
+              <div className="risk-group-items">
+                <div className="finding-item">
+                  <div className="finding-text">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                      <div><strong>Facility Type:</strong> {capitalizeFirst(location.facility_type || 'Operations')}</div>
+                      <div><strong>Risk Score:</strong> {riskScore}/100</div>
+                    </div>
+                    <div style={{ marginBottom: '10px' }}>
+                      <strong>Products/Services:</strong> {capitalizeFirst(location.products || 'Various')}
+                    </div>
+                    
+                    {location.workforce_size && (
+                      <div style={{ marginBottom: '10px' }}>
+                        <strong>Workforce Size:</strong> {location.workforce_size}
+                      </div>
+                    )}
+
+                    {location.coordinates && (
+                      <div style={{ marginBottom: '10px', fontSize: '0.9em', color: '#666' }}>
+                        <strong>Coordinates:</strong> {location.coordinates.lat.toFixed(4)}, {location.coordinates.lng.toFixed(4)}
+                      </div>
+                    )}
+
+                    {/* Modern slavery indicators if available */}
+                    {location.modern_slavery_indicators && location.modern_slavery_indicators.length > 0 && (
+                      <div style={{ 
+                        marginTop: '10px', 
+                        padding: '10px', 
+                        backgroundColor: '#fff3cd', 
+                        borderRadius: '4px',
+                        border: '1px solid #ffeaa7'
+                      }}>
+                        <strong style={{ color: '#856404' }}>⚠️ Modern Slavery Risk Indicators:</strong>
+                        <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
+                          {location.modern_slavery_indicators.map((indicator, i) => (
+                            <li key={i} style={{ fontSize: '0.9em', color: '#856404' }}>{indicator}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {location.labor_risk_level && (
+                      <div style={{ marginTop: '10px' }}>
+                        <strong>Labor Risk Level:</strong> 
+                        <span className="severity-badge" style={{ 
+                          backgroundColor: location.labor_risk_level === 'high' ? '#dc3545' : 
+                                          location.labor_risk_level === 'medium' ? '#ffc107' : '#28a745',
+                          color: 'white',
+                          marginLeft: '8px'
+                        }}>
+                          {capitalizeFirst(location.labor_risk_level)}
+                        </span>
+                      </div>
+                    )}
+
+                    <button 
+                      className="tab-button"
+                      style={{ 
+                        marginTop: '10px',
+                        padding: '8px 16px',
+                        fontSize: '0.9em'
+                      }}
+                      onClick={() => setSelectedLocation(selectedLocation === index ? null : index)}
                     >
-                      {capitalizeFirst(location.country_risk_level) || 'Unknown'}
-                    </span>
-                  </p>
-                  {location.workforce_size && (
-                    <p><strong>Workforce:</strong> {location.workforce_size}</p>
-                  )}
+                      {selectedLocation === index ? 'Hide Details' : 'Show Details'}
+                    </button>
+
+                    {selectedLocation === index && (
+                      <div style={{ 
+                        marginTop: '15px', 
+                        padding: '15px', 
+                        backgroundColor: '#f8f9fa', 
+                        borderRadius: '8px',
+                        border: '1px solid #e9ecef'
+                      }}>
+                        <h6 style={{ margin: '0 0 10px 0', color: '#333' }}>📍 Detailed Location Information</h6>
+                        <div className="details-grid">
+                          <div className="detail-item">
+                            <strong>Full Address:</strong> {location.city}, {location.country}
+                          </div>
+                          <div className="detail-item">
+                            <strong>Country Risk Level:</strong> {capitalizeFirst(location.country_risk_level) || 'Unknown'}
+                          </div>
+                          {location.coordinates && (
+                            <>
+                              <div className="detail-item">
+                                <strong>Latitude:</strong> {location.coordinates.lat.toFixed(6)}
+                              </div>
+                              <div className="detail-item">
+                                <strong>Longitude:</strong> {location.coordinates.lng.toFixed(6)}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="map-legend">
-        <h5>Legend:</h5>
-        <div className="legend-items">
-          <div className="legend-item">
-            <div className="legend-color" style={{ backgroundColor: '#dc3545' }}></div>
-            <span>High Risk (75+)</span>
+      {/* Risk Level Legend using your existing CSS */}
+      <div className="section">
+        <h5>🗺️ Risk Level Legend:</h5>
+        <div className="details-grid">
+          <div className="detail-item" style={{ borderLeft: '4px solid #dc3545' }}>
+            <strong>High Risk (75+)</strong> - Significant modern slavery concerns
           </div>
-          <div className="legend-item">
-            <div className="legend-color" style={{ backgroundColor: '#ffc107' }}></div>
-            <span>Medium Risk (50-75)</span>
+          <div className="detail-item" style={{ borderLeft: '4px solid #ffc107' }}>
+            <strong>Medium Risk (50-75)</strong> - Moderate risk factors present
           </div>
-          <div className="legend-item">
-            <div className="legend-color" style={{ backgroundColor: '#28a745' }}></div>
-            <span>Low Risk (&lt;50)</span>
+          <div className="detail-item" style={{ borderLeft: '4px solid #28a745' }}>
+            <strong>Low Risk (&lt;50)</strong> - Lower risk environment
           </div>
         </div>
       </div>
-
-      {selectedLocation && (
-        <div className="selected-location-details-fixed">
-          <div className="location-details-header">
-            <h5>Selected Location Details</h5>
-            <button 
-              className="close-details-btn"
-              onClick={() => setSelectedLocation(null)}
-              aria-label="Close details"
-            >
-              ×
-            </button>
-          </div>
-          <div className="location-details-grid">
-            <div><strong>Location:</strong> {selectedLocation.city}, {selectedLocation.country}</div>
-            <div><strong>Facility Type:</strong> {capitalizeFirst(selectedLocation.facility_type)}</div>
-            <div><strong>Risk Score:</strong> {selectedLocation.country_risk_score}/100</div>
-            <div><strong>Products/Services:</strong> {capitalizeFirst(selectedLocation.products)}</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-// UPDATED: Enhanced Data Sources Component
+// ENHANCED: Enhanced Data Sources Component with better AI analysis display (keeping your CSS)
 const EnhancedDataSources = ({ enhancedData }) => {
   // Debug logging to see what we're getting
   console.log("🔍 Enhanced Data Analysis:");
@@ -651,7 +849,7 @@ const EnhancedDataSources = ({ enhancedData }) => {
       <h3>🔍 Enhanced Data Analysis</h3>
       
       <div className="data-sources-grid">
-        {/* UPDATED: Economic Indicators with improved formatting */}
+        {/* Economic Indicators with AI analysis */}
         <div className="data-source-item">
           <h5>📊 Economic Indicators</h5>
           {hasEconomicData ? (
@@ -675,33 +873,77 @@ const EnhancedDataSources = ({ enhancedData }) => {
           ) : (
             <div className="no-data">
               <p>No economic data available</p>
-              <small style={{color: '#999', fontSize: '0.8em'}}>
-                Debug: economic_indicators type = {typeof enhancedData.economic_indicators}, 
-                keys = {enhancedData.economic_indicators ? Object.keys(enhancedData.economic_indicators).length : 0}
-              </small>
             </div>
           )}
         </div>
 
-        {/* UPDATED: Enhanced News with "coming soon" message */}
+        {/* Enhanced News Analysis */}
         <div className="data-source-item">
           <h5>📰 Enhanced News Analysis</h5>
-          <div className="news-coming-soon">
-            <p style={{
-              color: '#666', 
-              fontStyle: 'italic',
-              textAlign: 'center',
-              padding: '20px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '4px',
-              border: '1px dashed #ddd'
-            }}>
-              📰 Enhanced news analysis coming soon
-            </p>
-            <small style={{color: '#999', fontSize: '0.8em', textAlign: 'center', display: 'block', marginTop: '8px'}}>
-              We're working on integrating premium news sources for more comprehensive labor rights coverage
-            </small>
-          </div>
+          {hasNewsData ? (
+            <div>
+              <div style={{
+                marginBottom: '15px',
+                padding: '10px',
+                backgroundColor: '#e7f3ff',
+                borderRadius: '4px',
+                border: '1px solid #b3d9ff'
+              }}>
+                <div style={{fontSize: '0.9em', color: '#0056b3', fontWeight: '600'}}>
+                  📈 Found {newsData.length} news articles
+                </div>
+                <div style={{fontSize: '0.8em', color: '#0056b3', marginTop: '4px'}}>
+                  Analyzing labor practices and supply chain coverage
+                </div>
+              </div>
+              
+              {newsData.slice(0, 3).map((article, index) => (
+                <div key={index} style={{
+                  marginBottom: '12px',
+                  padding: '12px',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '6px',
+                  border: '1px solid #e9ecef'
+                }}>
+                  <div style={{fontSize: '0.9em', fontWeight: '600', color: '#333', marginBottom: '4px'}}>
+                    {article.title || 'News Article'}
+                  </div>
+                  <div style={{fontSize: '0.8em', color: '#666'}}>
+                    {article.domain || 'News Source'}
+                    {article.tone !== undefined && (
+                      <span style={{
+                        marginLeft: '8px',
+                        padding: '2px 6px',
+                        borderRadius: '3px',
+                        backgroundColor: article.tone > 0 ? '#d4edda' : article.tone < 0 ? '#f8d7da' : '#e2e3e5',
+                        color: article.tone > 0 ? '#155724' : article.tone < 0 ? '#721c24' : '#383d41',
+                        fontSize: '0.7em'
+                      }}>
+                        {article.tone > 0 ? 'Positive' : article.tone < 0 ? 'Negative' : 'Neutral'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="news-coming-soon">
+              <p style={{
+                color: '#666', 
+                fontStyle: 'italic',
+                textAlign: 'center',
+                padding: '20px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '4px',
+                border: '1px dashed #ddd'
+              }}>
+                📰 Enhanced news analysis ready
+              </p>
+              <small style={{color: '#999', fontSize: '0.8em', textAlign: 'center', display: 'block', marginTop: '8px'}}>
+                Premium news sources integration for comprehensive labor rights coverage
+              </small>
+            </div>
+          )}
         </div>
 
         {/* Data Sources */}
@@ -716,17 +958,12 @@ const EnhancedDataSources = ({ enhancedData }) => {
           ) : (
             <div className="no-data">
               <p>No data sources information available</p>
-              <small style={{color: '#999', fontSize: '0.8em'}}>
-                Debug: data_sources_used type = {typeof enhancedData.data_sources_used}, 
-                isArray = {Array.isArray(enhancedData.data_sources_used)}, 
-                length = {enhancedData.data_sources_used?.length || 0}
-              </small>
             </div>
           )}
         </div>
       </div>
 
-      {/* API Risk Factors */}
+      {/* API Risk Factors with AI Analysis */}
       {hasApiRiskFactors && (
         <div className="api-risk-factors">
           <h5>⚠️ Additional Risk Factors from External Data</h5>
@@ -740,20 +977,51 @@ const EnhancedDataSources = ({ enhancedData }) => {
                   </span>
                 </div>
                 <div className="factor-evidence">{factor.evidence}</div>
+                
+                {/* Enhanced AI analysis fields */}
+                {factor.vulnerability_analysis && (
+                  <div style={{marginTop: '8px', padding: '8px', backgroundColor: '#e7f3ff', borderRadius: '4px'}}>
+                    <strong style={{color: '#0056b3'}}>🤖 AI Analysis:</strong> {factor.vulnerability_analysis}
+                  </div>
+                )}
+
+                {factor.business_implications && (
+                  <div style={{marginTop: '8px', padding: '8px', backgroundColor: '#fff3cd', borderRadius: '4px'}}>
+                    <strong style={{color: '#856404'}}>💼 Business Impact:</strong> {factor.business_implications}
+                  </div>
+                )}
+
+                {factor.specific_risks && factor.specific_risks.length > 0 && (
+                  <div style={{marginTop: '8px'}}>
+                    <strong>⚠️ Specific Risks:</strong>
+                    <ul style={{margin: '4px 0', paddingLeft: '20px'}}>
+                      {factor.specific_risks.map((risk, i) => (
+                        <li key={i} style={{fontSize: '0.9em'}}>{risk}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {factor.recommended_actions && factor.recommended_actions.length > 0 && (
+                  <div style={{marginTop: '8px'}}>
+                    <strong>✅ Recommended Actions:</strong>
+                    <ul style={{margin: '4px 0', paddingLeft: '20px'}}>
+                      {factor.recommended_actions.map((action, i) => (
+                        <li key={i} style={{fontSize: '0.9em'}}>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {factor.data_source && (
+                  <div style={{fontSize: '0.8em', color: '#888', marginTop: '8px', fontStyle: 'italic'}}>
+                    Source: {factor.data_source}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
-      )}
-
-      {/* Debug Section - Only show in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <details style={{marginTop: '20px', fontSize: '12px', color: '#666'}}>
-          <summary style={{cursor: 'pointer'}}>🔧 Debug: Raw Data Structure</summary>
-          <pre style={{background: '#f8f9fa', padding: '10px', borderRadius: '4px', overflow: 'auto', maxHeight: '200px'}}>
-            {JSON.stringify(enhancedData, null, 2)}
-          </pre>
-        </details>
       )}
     </div>
   );
@@ -995,13 +1263,19 @@ function App() {
                 </div>
               </div>
 
-              {/* Tab Navigation */}
+              {/* Tab Navigation - keeping your exact original */}
               <div className="tab-navigation">
                 <button 
                   className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
                   onClick={() => setActiveTab('overview')}
                 >
                   Overview
+                </button>
+                <button 
+                  className={`tab-button ${activeTab === 'modern-slavery' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('modern-slavery')}
+                >
+                  🎯 Modern Slavery
                 </button>
                 <button 
                   className={`tab-button ${activeTab === 'benchmarking' ? 'active' : ''}`}
@@ -1023,7 +1297,7 @@ function App() {
                 </button>
               </div>
 
-              {/* Tab Content */}
+              {/* Tab Content - keeping your exact original structure */}
               <div className="tab-content">
                 {activeTab === 'overview' && (
                   <>
@@ -1067,7 +1341,7 @@ function App() {
                       </div>
                     )}
 
-                    {/* UPDATED: Use the new grouped risk factors component */}
+                    {/* ENHANCED: Use the new grouped risk factors component */}
                     {results.risk_factors && results.risk_factors.length > 0 && (
                       <RiskFactorsGrouped riskFactors={results.risk_factors} />
                     )}
@@ -1089,6 +1363,31 @@ function App() {
                             <strong>Assessment ID:</strong> {results.assessment_id}
                           </div>
                         )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* NEW: Modern Slavery Tab */}
+                {activeTab === 'modern-slavery' && (
+                  <>
+                    <ModernSlaveryRisk modernSlaveryData={results.modern_slavery_risk} />
+                    
+                    <div className="section">
+                      <h3>📊 Assessment Details</h3>
+                      <div className="details-grid">
+                        <div className="detail-item">
+                          <strong>Assessment Source:</strong> Sophisticated Risk Model
+                        </div>
+                        <div className="detail-item">
+                          <strong>Data Quality:</strong> {results.modern_slavery_risk?.data_coverage?.ai_enhanced ? 'AI Enhanced' : 'High'}
+                        </div>
+                        <div className="detail-item">
+                          <strong>Calculation Method:</strong> Inherent + Residual Risk
+                        </div>
+                        <div className="detail-item">
+                          <strong>Last Updated:</strong> {results.assessment_date || new Date().toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
                   </>
@@ -1156,7 +1455,7 @@ function App() {
                           <strong>Data Sources:</strong> {results.enhanced_data?.data_sources_used?.length || 0} external APIs
                         </div>
                         <div className="detail-item">
-                          <strong>News Articles:</strong> Enhanced analysis coming soon
+                          <strong>News Articles:</strong> {results.enhanced_data?.enhanced_news?.length || 0} analyzed
                         </div>
                         <div className="detail-item">
                           <strong>Economic Indicators:</strong> {Object.keys(results.enhanced_data?.economic_indicators || {}).length} countries

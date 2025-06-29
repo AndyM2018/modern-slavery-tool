@@ -1,0 +1,264 @@
+G20 Country, Imported product at risk of modern slavery,Source Country,Import Value (US$ '000)
+United Kingdom,Electronics,China,14713414
+United Kingdom,Electronics,Malaysia,37016
+United Kingdom,Garments,Argentina,189
+United Kingdom,Garments,Bangladesh,3009806
+United Kingdom,Garments,Brazil,1294
+United Kingdom,Garments,China,5257572
+United Kingdom,Garments,India,1255998
+United Kingdom,Garments,Malaysia,22225
+United Kingdom,Garments,Viet Nam,509046
+United Kingdom,Textiles,China,538295
+United Kingdom,Timber,Brazil,130422
+United Kingdom,Timber,Peru,77
+United Kingdom,Timber,Russia,352850
+United Kingdom,Fish,China,230258
+United Kingdom,Fish,Ghana,38875
+United Kingdom,Fish,Indonesia,18615
+United Kingdom,Fish,Taiwan,761
+United Kingdom,Fish,Thailand,16475
+United States,Electronics,China,106158032
+United States,Electronics,Malaysia,1427054
+United States,Garments,Argentina,950
+United States,Garments,Bangladesh,7273296
+United States,Garments,Brazil,25173
+United States,Garments,China,24889568
+United States,Garments,India,4657696
+United States,Garments,Malaysia,256474
+United States,Garments,Viet Nam,15288211
+United States,Textiles,China,4752876
+United States,Timber,Brazil,2107498
+United States,Timber,Peru,8361
+United States,Timber,Russia,549653
+United States,Fish,China,1015843
+United States,Fish,Ghana,257
+United States,Fish,Indonesia,406921
+United States,Fish,Taiwan,144891
+United States,Fish,Thailand,670363
+South Africa,Electronics,China,2435721
+South Africa,Electronics,Malaysia,4566
+South Africa,Garments,Argentina,24
+South Africa,Garments,Bangladesh,105396
+South Africa,Garments,Brazil,456
+South Africa,Garments,China,1157112
+South Africa,Garments,India,97275
+South Africa,Garments,Malaysia,3157
+South Africa,Garments,Viet Nam,32184
+South Africa,Palm oil,Indonesia,436801
+South Africa,Palm oil,Malaysia,116863
+South Africa,Solar panels,China,256757
+South Africa,Textiles,China,142188
+South Korea,Electronics,China,9275468
+South Korea,Electronics,Malaysia,15132
+South Korea,Garments,Argentina,136
+South Korea,Garments,Bangladesh,443987
+South Korea,Garments,Brazil,243
+South Korea,Garments,China,4882687
+South Korea,Garments,India,56823
+South Korea,Garments,Malaysia,8626
+South Korea,Garments,Viet Nam,3020662
+South Korea,Solar panels,China,1003783
+South Korea,Palm oil,Indonesia,453534
+South Korea,Palm oil,Malaysia,373781
+South Korea,Fish,China,533256
+South Korea,Fish,Ghana,1815
+South Korea,Fish,Indonesia,32753
+South Korea,Fish,Taiwan,114442
+South Korea,Fish,Thailand,22362
+Turkey,Electronics,China,3173722
+Turkey,Electronics,Malaysia,8515
+Turkey,Palm oil,Indonesia,223729
+Turkey,Palm oil,Malaysia,659919
+Turkey,Garments,Argentina,65
+Turkey,Garments,Bangladesh,190776
+Turkey,Garments,Brazil,171
+Turkey,Garments,China,271493
+Turkey,Garments,India,23756
+Turkey,Garments,Malaysia,27209
+Turkey,Garments,Viet Nam,63508
+Turkey,Solar panels,China,374515
+Turkey,Cocoa,Côte d’Ivoire,243290
+Turkey,Cocoa,Ghana,76298
+Mexico,Electronics,China,5553221
+Mexico,Electronics,Malaysia,178698
+Mexico,Garments,Bangladesh,394062
+Mexico,Garments,Brazil,1235
+Mexico,Garments,China,1525355
+Mexico,Garments,India,109101
+Mexico,Garments,Malaysia,5633
+Mexico,Garments,Viet Nam,119953
+Mexico,Solar panels,China,498915
+Mexico,Textiles,China,476471
+Mexico,Timber,Brazil,305542
+Mexico,Timber,Peru,8671
+Mexico,Timber,Russia,12402
+Russia,Electronics,China,8699722
+Russia,Electronics,Malaysia,24478
+Russia,Garments,Argentina,0.1
+Russia,Garments,Bangladesh,1161231
+Russia,Garments,Brazil,372
+Russia,Garments,China,2976065
+Russia,Garments,India,150554
+Russia,Garments,Malaysia,7103
+Russia,Garments,Viet Nam,399252
+Russia,Palm oil,Indonesia,886351
+Russia,Palm oil,Malaysia,15946
+Russia,Cattle,Brazil,129229
+Russia,Cattle,Paraguay,333732
+Russia,Textiles,China,420059
+Saudi Arabia,Garments,Argentina,11
+Saudi Arabia,Garments,Bangladesh,394959
+Saudi Arabia,Garments,Brazil,626
+Saudi Arabia,Garments,China,2317822
+Saudi Arabia,Garments,India,414568
+Saudi Arabia,Garments,Malaysia,6613
+Saudi Arabia,Garments,Viet Nam,53416
+Saudi Arabia,Electronics,China,2150220
+Saudi Arabia,Electronics,Malaysia,22842
+Saudi Arabia,Palm oil,Indonesia,480481
+Saudi Arabia,Palm oil,Malaysia,369096
+Saudi Arabia,Rice,India,812366
+Saudi Arabia,Sugarcane,Brazil,340235
+Indonesia,Electronics,China,2919522
+Indonesia,Electronics,Malaysia,77909
+Indonesia,Garments,Argentina,0.4
+Indonesia,Garments,Bangladesh,58744
+Indonesia,Garments,Brazil,7
+Indonesia,Garments,China,563955
+Indonesia,Garments,India,15410
+Indonesia,Garments,Malaysia,21467
+Indonesia,Garments,Viet Nam,49025
+Indonesia,Textiles,China,663425
+Indonesia,Coal,China,432649
+Indonesia,Coal,Pakistan,0.2
+Indonesia,Sugarcane,Brazil,353740
+Italy,Garments,Argentina,143
+Italy,Garments,Bangladesh,1420659
+Italy,Garments,Brazil,1110
+Italy,Garments,China,2560544
+Italy,Garments,India,353801
+Italy,Garments,Malaysia,4419
+Italy,Garments,Viet Nam,275277
+Italy,Electronics,China,4099594
+Italy,Electronics,Malaysia,11962
+Italy,Palm oil,Indonesia,769786
+Italy,Palm oil,Malaysia,416258
+Italy,Textiles,China,533455
+Italy,Coffee,Brazil,477026
+Japan,Electronics,China,29015858
+Japan,Electronics,Malaysia,111882
+Japan,Garments,Argentina,400
+Japan,Garments,Bangladesh,1161546
+Japan,Garments,Brazil,1773
+Japan,Garments,China,13008247
+Japan,Garments,India,207494
+Japan,Garments,Malaysia,116704
+Japan,Garments,Viet Nam,3129860
+Japan,Fish,China,1617554
+Japan,Fish,Ghana,1305
+Japan,Fish,Indonesia,189292
+Japan,Fish,Taiwan,376438
+Japan,Fish,Thailand,484290
+Japan,Solar panels,China,1887658
+Japan,Textiles,China,1805444
+China,Palm oil,Indonesia,4902375
+China,Palm oil,Malaysia,1432821
+China,Timber,Brazil,322095
+China,Timber,Peru,37308
+China,Timber,Russia,3564090
+China,Cattle,Brazil,3907805
+China,Garments,Argentina,24
+China,Garments,Bangladesh,404894
+China,Garments,Brazil,358
+China,Garments,India,60244
+China,Garments,Malaysia,16998
+China,Garments,Viet Nam,1173538
+China,Sugarcane,Brazil,1408718
+France,Garments,Argentina,577
+France,Garments,Bangladesh,1917574
+France,Garments,Brazil,2301
+France,Garments,China,4524306
+France,Garments,India,682554
+France,Garments,Malaysia,6475
+France,Garments,Viet Nam,564909
+France,Electronics,China,2609763
+France,Electronics,Malaysia,13678
+France,Cocoa,Côte d’Ivoire,462434
+France,Cocoa,Ghana,172531
+France,Textiles,China,434278
+France,Solar panels,China,362406
+Germany,Electronics,China,20319762
+Germany,Electronics,Malaysia,151570
+Germany,Garments,Argentina,51
+Germany,Garments,Bangladesh,7785869
+Germany,Garments,Brazil,857
+Germany,Garments,China,7993142
+Germany,Garments,India,1301894
+Germany,Garments,Malaysia,36160
+Germany,Garments,Viet Nam,1284308
+Germany,Solar panels,China,2425414
+Germany,Textiles,China,1620893
+Germany,Coffee,Brazil,1064743
+India,Electronics,China,7345027
+India,Electronics,Malaysia,432868
+India,Palm oil,Indonesia,3588848
+India,Palm oil,Malaysia,4014696
+India,Solar panels,China,3820664
+India,Gold,Burkina Faso,934503
+India,Gold,Peru,2143967
+India,Garments,Bangladesh,472834
+India,Garments,Brazil,78
+India,Garments,China,753798
+India,Garments,Malaysia,7523
+India,Garments,Viet Nam,47222
+Argentina,Electronics,China,1249673
+Argentina,Electronics,Malaysia,19969
+Argentina,Garments,Bangladesh,11673
+Argentina,Garments,Brazil,5914
+Argentina,Garments,China,103034
+Argentina,Garments,India,6338
+Argentina,Garments,Malaysia,448
+Argentina,Garments,Viet Nam,16574
+Argentina,Textiles,China,82025
+Argentina,Coffee,Brazil,59467
+Argentina,Solar panels,China,55545
+Australia,Electronics,China,8499583
+Australia,Electronics,Malaysia,387144
+Australia,Garments,Argentina,33
+Australia,Garments,Bangladesh,814958
+Australia,Garments,Brazil,1830
+Australia,Garments,China,4847261
+Australia,Garments,India,298593
+Australia,Garments,Malaysia,25397
+Australia,Garments,Viet Nam,400830
+Australia,Solar panels,China,1302216
+Australia,Textiles,China,469839
+Australia,Fish,China,75023
+Australia,Fish,Ghana,2
+Australia,Fish,Indonesia,73488
+Australia,Fish,Taiwan,39283
+Australia,Fish,Thailand,199156
+Brazil,Solar panels,China,2771297
+Brazil,Electronics,China,1207778
+Brazil,Electronics,Malaysia,15137
+Brazil,Garments,Argentina,6385
+Brazil,Garments,Bangladesh,108725
+Brazil,Garments,China,624307
+Brazil,Garments,India,46369
+Brazil,Garments,Malaysia,1963
+Brazil,Garments,Viet Nam,52986
+Brazil,Palm oil,Indonesia,511464
+Brazil,Palm oil,Malaysia,19313
+Brazil,Textiles,China,269509
+Canada,Electronics,China,11203647
+Canada,Electronics,Malaysia,76024
+Canada,Garments,Argentina,6
+Canada,Garments,Bangladesh,1278694
+Canada,Garments,Brazil,1309
+Canada,Garments,China,3068653
+Canada,Garments,India,259998
+Canada,Garments,Malaysia,12618
+Canada,Garments,Viet Nam,1053657
+Canada,Gold,Peru,2097402
+Canada,Textiles,China,482486
+Canada,Sugarcane,Brazil,427598
