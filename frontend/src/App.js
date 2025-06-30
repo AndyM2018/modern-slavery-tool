@@ -726,7 +726,7 @@ function App() {
     
     try {
       // Use the comprehensive backend endpoint
-      const response = await fetch(`http://localhost:5000/assess?company=${encodeURIComponent(companyName.trim())}`);
+      const response = await fetch(`https://modern-slavery-tool-production.up.railway.app/assess?company=${encodeURIComponent(companyName.trim())}`);
       
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
