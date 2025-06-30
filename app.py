@@ -2659,7 +2659,14 @@ def calculate_risk_score(company_data, company_name):
         # Calculate industry risk
         industry = company_data.get('industry', 'technology')
         industry_data = INDUSTRY_RISK_DATA.get(industry, {})
-        industry_risk = sum(industry_data.values()) / len(industry_data) if industry_data else 50
+
+        # Only sum numeric values, skip lists
+        numeric_values = []
+        for key, value in industry_data.items():
+        if isinstance(value, (int, float)):
+        numeric_values.append(value)
+
+        industry_risk = sum(numeric_values) / len(numeric_values) if numeric_values else 50
         
         # Calculate mitigation from company policies
         policies = company_data.get('modern_slavery_policies', {})
