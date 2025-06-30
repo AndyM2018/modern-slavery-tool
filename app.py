@@ -2663,8 +2663,8 @@ def calculate_risk_score(company_data, company_name):
         # Only sum numeric values, skip lists
         numeric_values = []
         for key, value in industry_data.items():
-        if isinstance(value, (int, float)):
-        numeric_values.append(value)
+            if isinstance(value, (int, float)):
+                numeric_values.append(value)
 
         industry_risk = sum(numeric_values) / len(numeric_values) if numeric_values else 50
         
