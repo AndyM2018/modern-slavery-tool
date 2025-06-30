@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import './App.css';
 
 // Fix for default markers in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -16,91 +18,130 @@ const capitalizeFirst = (str) => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
-// Enhanced export functionality for AI-powered data
+// Export functionality
 const exportToExcel = (results, companyName) => {
+  // Create workbook data
   const workbookData = [];
 
   // Overview Sheet
   const overviewData = [
-    ['AI-Powered Modern Slavery Risk Assessment - Overview'],
+    ['Modern Slavery Risk Assessment - Overview'],
     ['Company:', companyName],
     ['Assessment Date:', results.assessment_date || new Date().toLocaleDateString()],
-    ['Assessment Type:', results.methodology || 'AI-powered dynamic risk assessment'],
-    ['Overall Risk Score:', `${results.overall_risk_assessment?.overall_risk_score || 'N/A'}/100`],
-    ['Risk Category:', results.overall_risk_assessment?.risk_category || 'Unknown'],
-    ['Confidence Level:', results.assessment_quality?.confidence_level || 'High'],
+    ['Overall Risk Level:', results.overall_risk_level || results.risk_level || 'Unknown'],
+    ['Risk Score:', `${results.overall_risk_score || results.risk_score || 'N/A'}/100`],
+    ['Manufacturing Sites:', results.manufacturing_locations ? results.manufacturing_locations.length : 0],
+    ['Data Sources:', results.data_sources ? Object.values(results.data_sources).reduce((a, b) => a + b, 0) : 0],
     [''],
-    ['Company Profile:'],
-    ['Industry:', results.company_profile?.industry || 'N/A'],
-    ['Revenue:', results.company_profile?.revenue_billions ? `$${results.company_profile.revenue_billions}B` : 'N/A'],
-    ['Countries:', results.company_profile?.countries_of_operation?.length || 0],
-    ['Manufacturing Sites:', results.manufacturing_locations?.length || 0],
-    [''],
-    ['Risk Assessment Details:'],
+    ['Key Findings:'],
   ];
 
-  if (results.overall_risk_assessment) {
-    overviewData.push(['Country Risk:', `${results.overall_risk_assessment.country_risk_average || 'N/A'}/100`]);
-    overviewData.push(['Industry Risk:', `${results.overall_risk_assessment.industry_risk || 'N/A'}/100`]);
-    overviewData.push(['Company Risk:', `${results.overall_risk_assessment.company_specific_risk || 'N/A'}/100`]);
-    overviewData.push(['News Impact:', `${results.overall_risk_assessment.news_sentiment_impact || 'N/A'}/100`]);
+  if (results.key_findings && results.key_findings.length > 0) {
+    results.key_findings.forEach((finding, index) => {
+      const findingText = typeof finding === 'string' ? finding : finding.description;
+      const severity = finding.severity || '';
+      overviewData.push([`${index + 1}.`, findingText, severity]);
+    });
+  }
+
+  overviewData.push([''], ['Risk Factors:']);
+  if (results.risk_factors && results.risk_factors.length > 0) {
+    results.risk_factors.forEach((factor, index) => {
+      overviewData.push([`${index + 1}.`, factor.factor, factor.impact || '', factor.evidence || '']);
+    });
+  }
+
+  overviewData.push([''], ['Recommendations:']);
+  if (results.recommendations && results.recommendations.length > 0) {
+    results.recommendations.forEach((rec, index) => {
+      const recText = typeof rec === 'string' ? rec : rec.description || rec.title;
+      const priority = rec.priority || '';
+      overviewData.push([`${index + 1}.`, recText, priority]);
+    });
   }
 
   workbookData.push({ name: 'Overview', data: overviewData });
 
-  // AI Analysis Sheet
-  const aiAnalysisData = [
-    ['AI-Generated Analysis & Insights'],
-    [''],
-    ['Supply Chain Analysis:'],
-  ];
+  // Industry Benchmarking Sheet
+  if (results.industry_benchmarking) {
+    const benchData = [
+      ['Industry Benchmarking'],
+      ['Industry:', results.industry_benchmarking.matched_industry || ''],
+      ['Company Score:', results.industry_benchmarking.company_score || ''],
+      ['Industry Average:', results.industry_benchmarking.industry_average_score || ''],
+      ['Performance vs Peers:', results.industry_benchmarking.performance_vs_peers || ''],
+      [''],
+      ['Peer Companies:'],
+    ];
 
-  if (results.supply_chain_analysis) {
-    Object.entries(results.supply_chain_analysis).forEach(([key, value]) => {
-      if (typeof value === 'string' || typeof value === 'number') {
-        aiAnalysisData.push([capitalizeFirst(key.replace(/_/g, ' ')) + ':', value]);
-      }
-    });
+    if (results.industry_benchmarking.peer_companies) {
+      results.industry_benchmarking.peer_companies.forEach((company, index) => {
+        benchData.push([`${index + 1}.`, company]);
+      });
+    }
+
+    benchData.push([''], ['Common Industry Risks:']);
+    if (results.industry_benchmarking.industry_common_risks) {
+      results.industry_benchmarking.industry_common_risks.forEach((risk, index) => {
+        benchData.push([`${index + 1}.`, risk]);
+      });
+    }
+
+    workbookData.push({ name: 'Industry Benchmarking', data: benchData });
   }
 
-  aiAnalysisData.push([''], ['Country Analysis:']);
-  if (results.country_analysis) {
-    Object.entries(results.country_analysis).forEach(([country, analysis]) => {
-      aiAnalysisData.push([`${country}:`]);
-      if (analysis.risk_score) aiAnalysisData.push(['Risk Score:', `${analysis.risk_score}/100`]);
-      if (analysis.key_risks) {
-        aiAnalysisData.push(['Key Risks:']);
-        analysis.key_risks.forEach((risk, index) => {
-          aiAnalysisData.push([`${index + 1}.`, risk]);
-        });
-      }
+  // Manufacturing Locations Sheet
+  if (results.manufacturing_locations && results.manufacturing_locations.length > 0) {
+    const locationData = [
+      ['Manufacturing Locations'],
+      ['City', 'Country', 'Facility Type', 'Products', 'Risk Level', 'Risk Score', 'Latitude', 'Longitude'],
+    ];
+
+    results.manufacturing_locations.forEach(location => {
+      locationData.push([
+        location.city || '',
+        location.country || '',
+        location.facility_type || '',
+        location.products || '',
+        location.country_risk_level || '',
+        location.country_risk_score || '',
+        location.coordinates?.lat || '',
+        location.coordinates?.lng || '',
+      ]);
     });
+
+    workbookData.push({ name: 'Manufacturing Locations', data: locationData });
   }
 
-  workbookData.push({ name: 'AI Analysis', data: aiAnalysisData });
+  // Enhanced Data Sheet
+  if (results.enhanced_data) {
+    const enhancedData = [
+      ['Enhanced Data Analysis'],
+      [''],
+      ['Economic Indicators:'],
+    ];
 
-  // Recommendations Sheet
-  const recommendationsData = [
-    ['AI-Generated Recommendations'],
-    [''],
-  ];
+    if (results.enhanced_data.economic_indicators) {
+      Object.entries(results.enhanced_data.economic_indicators).forEach(([country, data]) => {
+        enhancedData.push([
+          country,
+          `GDP per capita: $${data.gdp_per_capita?.toLocaleString() || 'N/A'}`,
+          `Economic risk: ${data.economic_risk_factor || 'N/A'}`
+        ]);
+      });
+    }
 
-  if (results.recommendations && Array.isArray(results.recommendations)) {
-    results.recommendations.forEach((rec, index) => {
-      if (typeof rec === 'string') {
-        recommendationsData.push([`${index + 1}.`, rec]);
-      } else if (typeof rec === 'object') {
-        recommendationsData.push([`${index + 1}.`, rec.action || rec.description || JSON.stringify(rec)]);
-        if (rec.timeline) recommendationsData.push(['Timeline:', rec.timeline]);
-        if (rec.priority) recommendationsData.push(['Priority:', rec.priority]);
-        recommendationsData.push(['']);
-      }
-    });
+    enhancedData.push([''], ['Data Sources Used:']);
+    if (results.enhanced_data.data_sources_used) {
+      results.enhanced_data.data_sources_used.forEach((source, index) => {
+        enhancedData.push([`${index + 1}.`, source]);
+      });
+    }
+
+    workbookData.push({ name: 'Enhanced Data', data: enhancedData });
   }
 
-  workbookData.push({ name: 'Recommendations', data: recommendationsData });
-
-  // Convert to CSV and download
+  // Convert to CSV format and download
   const csvContent = workbookData.map(sheet => {
     const csvData = sheet.data.map(row => 
       row.map(cell => `"${cell}"`).join(',')
@@ -112,374 +153,329 @@ const exportToExcel = (results, companyName) => {
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
-  link.setAttribute('download', `${companyName}_AI_Modern_Slavery_Assessment.csv`);
+  link.setAttribute('download', `${companyName}_Modern_Slavery_Assessment.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 };
 
-// Risk level color mapping
-const getRiskColor = (score) => {
-  if (score >= 80) return '#dc2626'; // Critical - Red
-  if (score >= 65) return '#ea580c'; // High - Orange-red  
-  if (score >= 45) return '#d97706'; // Medium - Orange
-  if (score >= 25) return '#ca8a04'; // Low - Yellow
-  return '#16a34a'; // Very Low - Green
-};
+// UPDATED: Risk Factors Grouped Component
+const RiskFactorsGrouped = ({ riskFactors }) => {
+  if (!riskFactors || riskFactors.length === 0) return null;
 
-// Custom marker icons based on risk level
-const createCustomIcon = (riskScore) => {
-  const color = getRiskColor(riskScore);
-  return L.divIcon({
-    className: 'custom-marker',
-    html: `<div style="background-color: ${color}; width: 25px; height: 25px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-    iconSize: [25, 25],
-    iconAnchor: [12, 12]
-  });
-};
+  // Group risk factors by category
+  const groupRiskFactors = (factors) => {
+    const groups = {
+      operational: [],
+      geographic: [],
+      governance: [],
+      business_model: []
+    };
 
-// Enhanced AI-Powered Risk Assessment Component
-const AIRiskAssessment = ({ riskAssessment }) => {
-  if (!riskAssessment) return (
-    <div className="section">
-      <div className="no-data">
-        <p>🤖 AI risk assessment data not available</p>
-      </div>
-    </div>
-  );
+    factors.forEach(factor => {
+      const factorText = factor.factor || factor;
+      const lowerText = factorText.toLowerCase();
 
-  return (
-    <div className="section">
-      <h3>🤖 AI-Powered Risk Assessment</h3>
-      
-      <div className="risk-overview">
-        <div className="risk-card">
-          <h3>Overall Risk Score</h3>
-          <div className="risk-score" style={{ color: getRiskColor(riskAssessment.overall_risk_score) }}>
-            {Math.round(riskAssessment.overall_risk_score || 0)}
-            <span className="score-max">/100</span>
-          </div>
-        </div>
-        
-        <div className="risk-card">
-          <h3>Risk Category</h3>
-          <div 
-            className="risk-badge"
-            style={{ backgroundColor: getRiskColor(riskAssessment.overall_risk_score) }}
-          >
-            {riskAssessment.risk_category || 'Unknown'}
-          </div>
-        </div>
-        
-        <div className="risk-card">
-          <h3>Country Risk</h3>
-          <div className="risk-score">
-            {Math.round(riskAssessment.country_risk_average || 0)}
-            <span className="score-max">/100</span>
-          </div>
-        </div>
+      // Categorize based on keywords
+      if (lowerText.includes('supply chain') || 
+          lowerText.includes('manufacturing') || 
+          lowerText.includes('labor') || 
+          lowerText.includes('worker') || 
+          lowerText.includes('operational') ||
+          lowerText.includes('production')) {
+        groups.operational.push(factor);
+      } else if (lowerText.includes('country') || 
+                 lowerText.includes('geographic') || 
+                 lowerText.includes('gdp') || 
+                 lowerText.includes('economic') ||
+                 lowerText.includes('region')) {
+        groups.geographic.push(factor);
+      } else if (lowerText.includes('policy') || 
+                 lowerText.includes('governance') || 
+                 lowerText.includes('compliance') || 
+                 lowerText.includes('transparency') ||
+                 lowerText.includes('audit') ||
+                 lowerText.includes('reporting')) {
+        groups.governance.push(factor);
+      } else {
+        // Default to business model risks
+        groups.business_model.push(factor);
+      }
+    });
 
-        <div className="risk-card">
-          <h3>Industry Risk</h3>
-          <div className="risk-score">
-            {Math.round(riskAssessment.industry_risk || 0)}
-            <span className="score-max">/100</span>
-          </div>
-        </div>
-      </div>
+    return groups;
+  };
 
-      {riskAssessment.breakdown && (
-        <div className="section">
-          <h4>Risk Breakdown</h4>
-          <div className="details-grid">
-            <div className="detail-item">
-              <strong>Country Risk Component:</strong> {Math.round(riskAssessment.breakdown.country_risk_component || 0)}/100
-            </div>
-            <div className="detail-item">
-              <strong>Industry Risk Component:</strong> {Math.round(riskAssessment.breakdown.industry_risk_component || 0)}/100
-            </div>
-            <div className="detail-item">
-              <strong>Transparency Component:</strong> {Math.round(riskAssessment.breakdown.transparency_component || 0)}/100
-            </div>
-            <div className="detail-item">
-              <strong>Mitigation Impact:</strong> {Math.round(riskAssessment.breakdown.final_mitigation_impact || 0)}%
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+  const groupedFactors = groupRiskFactors(riskFactors);
 
-// AI-Generated Country Analysis Component
-const AICountryAnalysis = ({ countryAnalysis }) => {
-  if (!countryAnalysis || Object.keys(countryAnalysis).length === 0) {
+  const renderRiskGroup = (title, icon, factors, groupKey) => {
+    if (factors.length === 0) return null;
+
     return (
-      <div className="section">
-        <div className="no-data">
-          <p>🌍 AI country analysis not available</p>
+      <div key={groupKey} className="risk-group">
+        <h5 className="risk-group-title">
+          {icon} {title}
+        </h5>
+        <div className="risk-group-items">
+          {factors.map((riskFactor, index) => (
+            <div key={index} className="finding-item">
+              <div className="finding-text">
+                <strong>{riskFactor.factor}</strong>
+                <div style={{fontSize: '0.9rem', color: '#666', marginTop: '8px'}}>
+                  <strong>Impact:</strong> <span className={`severity-badge ${riskFactor.impact}`}>
+                    {riskFactor.impact?.toUpperCase()}
+                  </span>
+                </div>
+                <div style={{fontSize: '0.9rem', color: '#555', marginTop: '5px'}}>
+                  <strong>Evidence:</strong> {riskFactor.evidence}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
-  }
+  };
 
   return (
     <div className="section">
-      <h3>🌍 AI Country Risk Analysis</h3>
+      <h3>⚠️ Risk Factors</h3>
       <div className="risk-groups-container">
-        {Object.entries(countryAnalysis).map(([country, analysis]) => {
-          const riskScore = analysis.risk_score || analysis.overall_risk_score || 50;
-          const riskColor = getRiskColor(riskScore);
-          
-          return (
-            <div key={country} className="risk-group" style={{ border: `3px solid ${riskColor}` }}>
-              <h5 className="risk-group-title" style={{ backgroundColor: riskColor, color: 'white' }}>
-                🌍 {country}
-                <span style={{ float: 'right', fontSize: '0.8em' }}>Score: {Math.round(riskScore)}</span>
-              </h5>
-              <div className="risk-group-items">
-                <div className="finding-item">
-                  <div className="finding-text">
-                    {analysis.key_risks && (
-                      <div style={{ marginBottom: '10px' }}>
-                        <strong>Key Risks:</strong>
-                        <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
-                          {analysis.key_risks.map((risk, i) => (
-                            <li key={i}>{risk}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {analysis.economic_indicators && (
-                      <div style={{ marginBottom: '10px' }}>
-                        <strong>Economic Indicators:</strong>
-                        <div className="details-grid" style={{ marginTop: '5px' }}>
-                          {Object.entries(analysis.economic_indicators).map(([key, value]) => (
-                            <div key={key} className="detail-item">
-                              <strong>{capitalizeFirst(key.replace(/_/g, ' '))}:</strong> {value?.value || value}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {analysis.world_bank_data && Object.keys(analysis.world_bank_data).length > 0 && (
-                      <div>
-                        <strong>World Bank Data:</strong>
-                        <div className="details-grid" style={{ marginTop: '5px' }}>
-                          {Object.entries(analysis.world_bank_data).map(([indicator, data]) => (
-                            <div key={indicator} className="detail-item">
-                              <strong>{indicator}:</strong> {data?.value || 'N/A'}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {renderRiskGroup("Operational Risks", "🏭", groupedFactors.operational, "operational")}
+        {renderRiskGroup("Geographic Risks", "🌍", groupedFactors.geographic, "geographic")}
+        {renderRiskGroup("Governance Risks", "📋", groupedFactors.governance, "governance")}
+        {renderRiskGroup("Business Model Risks", "💼", groupedFactors.business_model, "business_model")}
       </div>
     </div>
   );
 };
 
-// AI Industry Analysis Component
-const AIIndustryAnalysis = ({ industryAnalysis }) => {
-  if (!industryAnalysis || Object.keys(industryAnalysis).length === 0) {
-    return (
-      <div className="section">
-        <div className="no-data">
-          <p>🏭 AI industry analysis not available</p>
-        </div>
-      </div>
-    );
-  }
+// IMPROVED: Industry Benchmarking Component
+const IndustryBenchmarking = ({ benchmarkData }) => {
+  if (!benchmarkData) return null;
+
+  const getPerformanceColor = (performance) => {
+    return performance === 'above average' ? '#28a745' : '#dc3545';
+  };
+
+  const getScoreColor = (score) => {
+    if (score <= 35) return '#28a745';
+    if (score <= 65) return '#ffc107';
+    return '#dc3545';
+  };
+
+  const getScoreBackgroundColor = (score) => {
+    if (score <= 35) return '#d4edda';
+    if (score <= 65) return '#fff3cd';
+    return '#f8d7da';
+  };
 
   return (
-    <div className="section">
-      <h3>🏭 AI Industry Risk Analysis</h3>
+    <div className="section industry-benchmarking">
+      <h3>📊 Industry Benchmarking</h3>
       
-      <div className="risk-overview">
-        {industryAnalysis.overall_risk_score && (
-          <div className="risk-card">
-            <h3>Industry Risk</h3>
-            <div className="risk-score" style={{ color: getRiskColor(industryAnalysis.overall_risk_score) }}>
-              {Math.round(industryAnalysis.overall_risk_score)}
-              <span className="score-max">/100</span>
+      <div className="benchmark-overview">
+        {/* IMPROVED: Better Industry Header */}
+        <div className="industry-header-card">
+          <div className="industry-title">
+            <h4>Industry: {benchmarkData.matched_industry}</h4>
+            <span className="data-quality-badge">
+              Data Quality: {benchmarkData.data_quality || 'High'}
+            </span>
+          </div>
+        </div>
+
+        {/* IMPROVED: Better Score Comparison Layout */}
+        <div className="score-comparison-improved">
+          <div className="score-card company-score-card">
+            <div className="score-header">
+              <span className="score-label">Company Score</span>
+              <span className="score-trend">
+                {benchmarkData.performance_vs_peers === 'above average' ? '📈' : '📉'}
+              </span>
             </div>
+            <div 
+              className="score-display"
+              style={{ 
+                color: getScoreColor(benchmarkData.company_score),
+                backgroundColor: getScoreBackgroundColor(benchmarkData.company_score)
+              }}
+            >
+              {benchmarkData.company_score}
+              <span className="score-suffix">/100</span>
+            </div>
+            <div className="score-description">Company Risk Score</div>
+          </div>
+
+          <div className="vs-divider">
+            <span>VS</span>
+          </div>
+
+          <div className="score-card industry-score-card">
+            <div className="score-header">
+              <span className="score-label">Industry Average</span>
+              <span className="score-trend">📊</span>
+            </div>
+            <div 
+              className="score-display"
+              style={{ 
+                color: getScoreColor(benchmarkData.industry_average_score),
+                backgroundColor: getScoreBackgroundColor(benchmarkData.industry_average_score)
+              }}
+            >
+              {benchmarkData.industry_average_score}
+              <span className="score-suffix">/100</span>
+            </div>
+            <div className="score-description">Industry Benchmark</div>
+          </div>
+        </div>
+
+        {/* IMPROVED: Performance Summary Card */}
+        <div className="performance-summary-card">
+          <div className="performance-result">
+            <span className="performance-label">Performance vs Peers:</span>
+            <span 
+              className="performance-value"
+              style={{ color: getPerformanceColor(benchmarkData.performance_vs_peers) }}
+            >
+              {benchmarkData.performance_vs_peers.toUpperCase()}
+            </span>
+          </div>
+          <div className="score-difference">
+            <span className="difference-label">Score Difference:</span>
+            <span className="difference-value">
+              {Math.abs(benchmarkData.company_score - benchmarkData.industry_average_score)} points
+            </span>
+          </div>
+          <div className="percentile-ranking">
+            <span className="percentile-label">Industry Ranking:</span>
+            <span className="percentile-value">
+              {benchmarkData.percentile_ranking || 'Calculating...'}
+            </span>
+          </div>
+        </div>
+
+        {/* IMPROVED: Key Insights Card */}
+        {benchmarkData.benchmark_insights && benchmarkData.benchmark_insights.length > 0 && (
+          <div className="insights-card">
+            <h5>🔍 Key Insights</h5>
+            <ul className="insights-list">
+              {benchmarkData.benchmark_insights.map((insight, index) => (
+                <li key={index} className="insight-item">{insight}</li>
+              ))}
+            </ul>
           </div>
         )}
-        
-        {industryAnalysis.risk_level && (
-          <div className="risk-card">
-            <h3>Risk Level</h3>
-            <div className="risk-badge" style={{ backgroundColor: getRiskColor(industryAnalysis.overall_risk_score || 50) }}>
-              {industryAnalysis.risk_level}
+
+        {/* IMPROVED: Industry Details Grid */}
+        <div className="industry-details-grid">
+          <div className="detail-card peer-companies-card">
+            <h5>🏢 Industry Peer Companies</h5>
+            <div className="peer-companies-improved">
+              {benchmarkData.peer_companies?.slice(0, 8).map((company, index) => (
+                <span key={index} className="peer-company-tag">{company}</span>
+              ))}
             </div>
           </div>
-        )}
+
+          <div className="detail-card risks-card">
+            <h5>⚠️ Common Industry Risks</h5>
+            <ul className="industry-risks-improved">
+              {benchmarkData.industry_common_risks?.slice(0, 5).map((risk, index) => (
+                <li key={index} className="risk-item">
+                  <span className="risk-bullet">•</span>
+                  {capitalizeFirst(risk)}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="detail-card practices-card">
+            <h5>✅ Industry Best Practices</h5>
+            <ul className="best-practices-improved">
+              {benchmarkData.industry_best_practices?.slice(0, 5).map((practice, index) => (
+                <li key={index} className="practice-item">
+                  <span className="practice-bullet">✓</span>
+                  {capitalizeFirst(practice)}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="detail-card regulatory-card">
+            <h5>📋 Regulatory Focus Areas</h5>
+            <div className="regulatory-tags">
+              {benchmarkData.regulatory_focus?.slice(0, 4).map((regulation, index) => (
+                <span key={index} className="regulatory-tag">{regulation}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* IMPROVED: Metadata Footer */}
+        <div className="benchmark-metadata-improved">
+          <div className="metadata-item">
+            <span className="metadata-label">Last Updated:</span>
+            <span className="metadata-value">{benchmarkData.last_updated}</span>
+          </div>
+          <div className="metadata-item">
+            <span className="metadata-label">Peer Companies Analyzed:</span>
+            <span className="metadata-value">{benchmarkData.peer_companies?.length || 0}</span>
+          </div>
+          <div className="metadata-item">
+            <span className="metadata-label">Data Sources:</span>
+            <span className="metadata-value">{benchmarkData.data_sources?.length || 3}</span>
+          </div>
+        </div>
       </div>
-
-      {industryAnalysis.risk_factors && (
-        <div className="section">
-          <h4>Industry Risk Factors</h4>
-          <ul className="findings-list">
-            {industryAnalysis.risk_factors.map((factor, index) => (
-              <li key={index} className="finding-item">
-                <span className="finding-text">🏭 {factor}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {industryAnalysis.vulnerabilities && (
-        <div className="section">
-          <h4>Industry Vulnerabilities</h4>
-          <div className="details-grid">
-            {Object.entries(industryAnalysis.vulnerabilities).map(([key, value]) => (
-              <div key={key} className="detail-item">
-                <strong>{capitalizeFirst(key.replace(/_/g, ' '))}:</strong> {value}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {industryAnalysis.best_practices && (
-        <div className="section">
-          <h4>AI-Recommended Best Practices</h4>
-          <ul className="findings-list">
-            {industryAnalysis.best_practices.map((practice, index) => (
-              <li key={index} className="finding-item">
-                <span className="finding-text">✅ {practice}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };
 
-// Enhanced News & Sentiment Analysis Component
-const AINewsAnalysis = ({ newsAndSentiment }) => {
-  if (!newsAndSentiment) return null;
-
-  const { sentiment_analysis, recent_articles, monitoring_alerts } = newsAndSentiment;
-
-  return (
-    <div className="section">
-      <h3>📰 AI News & Sentiment Analysis</h3>
-      
-      {sentiment_analysis && (
-        <div className="risk-overview">
-          <div className="risk-card">
-            <h3>Sentiment Score</h3>
-            <div className="risk-score" style={{ color: getRiskColor(100 - sentiment_analysis.sentiment_score) }}>
-              {Math.round(sentiment_analysis.sentiment_score || 50)}
-              <span className="score-max">/100</span>
-            </div>
-          </div>
-          
-          <div className="risk-card">
-            <h3>Articles Analyzed</h3>
-            <div className="risk-score">
-              {recent_articles?.length || 0}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {sentiment_analysis?.key_themes && (
-        <div className="section">
-          <h4>Key Themes Identified</h4>
-          <ul className="findings-list">
-            {sentiment_analysis.key_themes.map((theme, index) => (
-              <li key={index} className="finding-item">
-                <span className="finding-text">🔍 {theme}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {monitoring_alerts && monitoring_alerts.length > 0 && (
-        <div className="section">
-          <h4>Monitoring Alerts</h4>
-          <div className="risk-groups-container">
-            {monitoring_alerts.map((alert, index) => (
-              <div key={index} className="risk-group" style={{ border: `3px solid ${alert.level === 'High' ? '#dc2626' : '#d97706'}` }}>
-                <h5 className="risk-group-title" style={{ backgroundColor: alert.level === 'High' ? '#dc2626' : '#d97706', color: 'white' }}>
-                  ⚠️ {alert.level} Priority Alert
-                </h5>
-                <div className="risk-group-items">
-                  <div className="finding-item">
-                    <div className="finding-text">
-                      <div style={{ marginBottom: '8px' }}><strong>Message:</strong> {alert.message}</div>
-                      <div><strong>Recommended Action:</strong> {alert.action}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {recent_articles && recent_articles.length > 0 && (
-        <div className="section">
-          <h4>Recent Articles Analyzed</h4>
-          <div className="details-grid">
-            {recent_articles.slice(0, 3).map((article, index) => (
-              <div key={index} className="detail-item">
-                <strong>Article {index + 1}:</strong> {article.title || 'No title available'}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Enhanced Manufacturing Map Component
-const AIManufacturingMap = ({ locations, companyProfile }) => {
+// Manufacturing Map Component
+const ManufacturingMap = ({ mapData, locations }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
 
-  // Try to get locations from different possible sources
-  const manufacturingLocations = locations || 
-    companyProfile?.manufacturing_locations || 
-    companyProfile?.operational_locations || 
-    [];
-
-  if (!manufacturingLocations || manufacturingLocations.length === 0) {
+  if (!locations || locations.length === 0) {
     return (
       <div className="section">
-        <h3>🗺️ Global Operations Map</h3>
-        <div className="no-data">
-          <p>🔍 AI is analyzing operational locations...</p>
-          <p>Manufacturing location data will be available once AI processing completes.</p>
-        </div>
+        <h3>🗺️ Global Manufacturing Locations</h3>
+        <div className="no-data">No manufacturing location data available</div>
       </div>
     );
   }
 
-  // Calculate center point for map
-  const validLocations = manufacturingLocations.filter(loc => 
-    loc.coordinates && loc.coordinates.lat && loc.coordinates.lng
+  const getRiskColor = (riskScore) => {
+    if (riskScore > 75) return '#dc3545';
+    if (riskScore > 50) return '#ffc107';
+    return '#28a745';
+  };
+
+  const createCustomIcon = (riskScore, facilityType) => {
+    const color = getRiskColor(riskScore);
+    const size = facilityType === 'manufacturing' ? 25 : 20;
+    
+    return L.divIcon({
+      className: 'custom-marker',
+      html: `<div style="background-color: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [size, size],
+      iconAnchor: [size/2, size/2]
+    });
+  };
+
+  // Calculate map center based on locations
+  const validLocations = locations.filter(loc => 
+    loc.coordinates && 
+    typeof loc.coordinates.lat === 'number' && 
+    typeof loc.coordinates.lng === 'number'
   );
 
   if (validLocations.length === 0) {
     return (
       <div className="section">
-        <h3>🗺️ Global Operations Map</h3>
-        <div className="no-data">No valid coordinate data available for mapping</div>
+        <h3>🗺️ Global Manufacturing Locations</h3>
+        <div className="no-data">Location coordinates not available</div>
       </div>
     );
   }
@@ -489,197 +485,280 @@ const AIManufacturingMap = ({ locations, companyProfile }) => {
 
   return (
     <div className="section manufacturing-map">
-      <h3>🗺️ AI-Mapped Global Operations</h3>
+      <h3>🗺️ Global Manufacturing Locations</h3>
       
-      {/* Interactive Map */}
-      <div style={{ height: '500px', width: '100%', marginBottom: '20px', borderRadius: '8px', overflow: 'hidden' }}>
-        <MapContainer 
-          center={[centerLat, centerLng]} 
-          zoom={2} 
-          style={{ height: '100%', width: '100%' }}
+      {mapData && (
+        <div className="map-summary">
+          <div className="summary-stats">
+            <div className="stat-item">
+              <span className="stat-number">{mapData.total_locations}</span>
+              <span className="stat-label">Total Sites</span>
+            </div>
+            <div className="stat-item high-risk">
+              <span className="stat-number">{mapData.risk_summary?.high_risk_sites || 0}</span>
+              <span className="stat-label">High Risk</span>
+            </div>
+            <div className="stat-item medium-risk">
+              <span className="stat-number">{mapData.risk_summary?.medium_risk_sites || 0}</span>
+              <span className="stat-label">Medium Risk</span>
+            </div>
+            <div className="stat-item low-risk">
+              <span className="stat-number">{mapData.risk_summary?.low_risk_sites || 0}</span>
+              <span className="stat-label">Low Risk</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="map-container">
+        <MapContainer
+          center={[centerLat, centerLng]}
+          zoom={2}
+          style={{ height: '500px', width: '100%', borderRadius: '8px' }}
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
-          {validLocations.map((location, index) => {
-            const riskScore = location.risk_score || location.country_risk || 50;
-            return (
-              <Marker
-                key={index}
-                position={[location.coordinates.lat, location.coordinates.lng]}
-                icon={createCustomIcon(riskScore)}
+          
+          {validLocations.map((location, index) => (
+            <Marker
+              key={index}
+              position={[location.coordinates.lat, location.coordinates.lng]}
+              icon={createCustomIcon(location.country_risk_score || 50, location.facility_type)}
+              eventHandlers={{
+                click: () => setSelectedLocation(location)
+              }}
+            >
+              <Popup 
+                offset={[0, 10]}
+                className="custom-popup"
+                maxWidth={250}
+                minWidth={200}
+                autoPan={true}
+                autoPanPadding={[10, 10]}
+                closeButton={true}
+                autoClose={false}
+                closeOnEscapeKey={true}
               >
-                <Popup>
-                  <div style={{ minWidth: '200px' }}>
-                    <h4 style={{ margin: '0 0 8px 0' }}>{location.city}, {location.country}</h4>
-                    <p><strong>Facility:</strong> {location.facility_type || 'Operations'}</p>
-                    <p><strong>Products:</strong> {location.products?.join(', ') || 'Various'}</p>
-                    <p><strong>Risk Score:</strong> <span style={{color: getRiskColor(riskScore)}}>{Math.round(riskScore)}</span></p>
-                    {location.risk_factors && location.risk_factors.length > 0 && (
-                      <div>
-                        <strong>AI-Identified Risk Factors:</strong>
-                        <ul style={{ margin: '4px 0', paddingLeft: '16px' }}>
-                          {location.risk_factors.slice(0, 3).map((factor, i) => (
-                            <li key={i} style={{ fontSize: '0.9em' }}>{factor}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
+                <div className="location-popup">
+                  <h4>{location.city}, {location.country}</h4>
+                  <p><strong>Type:</strong> {capitalizeFirst(location.facility_type)}</p>
+                  <p><strong>Products:</strong> {capitalizeFirst(location.products)}</p>
+                  <p><strong>Risk Level:</strong> 
+                    <span 
+                      className="risk-badge"
+                      style={{ backgroundColor: getRiskColor(location.country_risk_score || 50) }}
+                    >
+                      {capitalizeFirst(location.country_risk_level) || 'Unknown'}
+                    </span>
+                  </p>
+                  {location.workforce_size && (
+                    <p><strong>Workforce:</strong> {location.workforce_size}</p>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
         </MapContainer>
       </div>
 
-      {/* Location Cards */}
-      <div className="risk-groups-container">
-        {validLocations.map((location, index) => {
-          const riskScore = location.risk_score || location.country_risk || 50;
-          const riskColor = getRiskColor(riskScore);
-          const riskLevel = riskScore >= 75 ? 'High' : riskScore >= 40 ? 'Medium' : 'Low';
-
-          return (
-            <div key={index} className="risk-group" style={{ border: `3px solid ${riskColor}` }}>
-              <h5 className="risk-group-title" style={{ backgroundColor: riskColor, color: 'white' }}>
-                📍 {location.city}, {location.country}
-                <span style={{ float: 'right', fontSize: '0.8em' }}>{riskLevel} Risk</span>
-              </h5>
-              <div className="risk-group-items">
-                <div className="finding-item">
-                  <div className="finding-text">
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                      <div><strong>Facility:</strong> {location.facility_type || 'Operations'}</div>
-                      <div><strong>AI Risk Score:</strong> {Math.round(riskScore)}/100</div>
-                    </div>
-                    <div style={{ marginBottom: '10px' }}>
-                      <strong>Products/Services:</strong> {location.products?.join(', ') || location.description || 'Various operations'}
-                    </div>
-                    
-                    {location.ai_analysis && (
-                      <div style={{ 
-                        marginTop: '10px', 
-                        padding: '10px', 
-                        backgroundColor: '#e7f3ff', 
-                        borderRadius: '4px',
-                        border: '1px solid #b3d9ff'
-                      }}>
-                        <strong style={{ color: '#0056b3' }}>🤖 AI Analysis:</strong>
-                        <p style={{ margin: '5px 0', fontSize: '0.9em', color: '#0056b3' }}>{location.ai_analysis}</p>
-                      </div>
-                    )}
-
-                    {location.risk_factors && location.risk_factors.length > 0 && (
-                      <div style={{ 
-                        marginTop: '10px', 
-                        padding: '10px', 
-                        backgroundColor: '#fff3cd', 
-                        borderRadius: '4px',
-                        border: '1px solid #ffeaa7'
-                      }}>
-                        <strong style={{ color: '#856404' }}>⚠️ AI-Identified Risks:</strong>
-                        <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
-                          {location.risk_factors.map((factor, i) => (
-                            <li key={i} style={{ fontSize: '0.9em', color: '#856404' }}>{factor}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      <div className="map-legend">
+        <h5>Legend:</h5>
+        <div className="legend-items">
+          <div className="legend-item">
+            <div className="legend-color" style={{ backgroundColor: '#dc3545' }}></div>
+            <span>High Risk (75+)</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color" style={{ backgroundColor: '#ffc107' }}></div>
+            <span>Medium Risk (50-75)</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color" style={{ backgroundColor: '#28a745' }}></div>
+            <span>Low Risk (&lt;50)</span>
+          </div>
+        </div>
       </div>
+
+      {selectedLocation && (
+        <div className="selected-location-details-fixed">
+          <div className="location-details-header">
+            <h5>Selected Location Details</h5>
+            <button 
+              className="close-details-btn"
+              onClick={() => setSelectedLocation(null)}
+              aria-label="Close details"
+            >
+              ×
+            </button>
+          </div>
+          <div className="location-details-grid">
+            <div><strong>Location:</strong> {selectedLocation.city}, {selectedLocation.country}</div>
+            <div><strong>Facility Type:</strong> {capitalizeFirst(selectedLocation.facility_type)}</div>
+            <div><strong>Risk Score:</strong> {selectedLocation.country_risk_score}/100</div>
+            <div><strong>Products/Services:</strong> {capitalizeFirst(selectedLocation.products)}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-// Enhanced AI Recommendations Component
-const AIRecommendations = ({ recommendations }) => {
-  if (!recommendations || recommendations.length === 0) {
+// UPDATED: Enhanced Data Sources Component
+const EnhancedDataSources = ({ enhancedData }) => {
+  // Debug logging to see what we're getting
+  console.log("🔍 Enhanced Data Analysis:");
+  console.log("  - Raw data:", enhancedData);
+  console.log("  - Type:", typeof enhancedData);
+  console.log("  - Keys:", enhancedData ? Object.keys(enhancedData) : "No data");
+
+  if (!enhancedData) {
     return (
-      <div className="section">
-        <h3>💡 AI-Generated Recommendations</h3>
-        <div className="no-data">No recommendations available</div>
+      <div className="section enhanced-data">
+        <h3>🔍 Enhanced Data Analysis</h3>
+        <div className="no-data">
+          <p>⚠️ No enhanced data received from backend</p>
+          <small>This could be due to API rate limits or data availability</small>
+        </div>
       </div>
     );
   }
 
+  // Safe data extraction with fallbacks
+  const economicData = enhancedData.economic_indicators || {};
+  const newsData = enhancedData.enhanced_news || [];
+  const dataSources = enhancedData.data_sources_used || [];
+  const apiRiskFactors = enhancedData.api_risk_factors || [];
+
+  // Data availability checks
+  const hasEconomicData = Object.keys(economicData).length > 0;
+  const hasNewsData = Array.isArray(newsData) && newsData.length > 0;
+  const hasDataSources = Array.isArray(dataSources) && dataSources.length > 0;
+  const hasApiRiskFactors = Array.isArray(apiRiskFactors) && apiRiskFactors.length > 0;
+
+  console.log("🔍 Data availability:", {
+    hasEconomicData,
+    hasNewsData, 
+    hasDataSources,
+    hasApiRiskFactors,
+    economicDataCount: Object.keys(economicData).length,
+    newsDataCount: newsData.length
+  });
+
   return (
-    <div className="section">
-      <h3>💡 AI-Generated Recommendations</h3>
-      <div className="risk-groups-container">
-        {recommendations.map((rec, index) => {
-          // Handle both string and object recommendations
-          const recText = typeof rec === 'string' ? rec : rec.action || rec.description || rec.recommendation;
-          const priority = rec.priority || 'Medium';
-          const timeline = rec.timeline || rec.implementation_timeline;
-          const impact = rec.expected_impact || rec.impact;
-          
-          const priorityColor = priority === 'Critical' ? '#dc2626' : 
-                               priority === 'High' ? '#ea580c' : 
-                               priority === 'Medium' ? '#d97706' : '#16a34a';
-
-          return (
-            <div key={index} className="risk-group" style={{ border: `3px solid ${priorityColor}` }}>
-              <h5 className="risk-group-title" style={{ backgroundColor: priorityColor, color: 'white' }}>
-                💡 Recommendation #{index + 1}
-                {priority && <span style={{ float: 'right', fontSize: '0.8em' }}>{priority} Priority</span>}
-              </h5>
-              <div className="risk-group-items">
-                <div className="finding-item">
-                  <div className="finding-text">
-                    <div style={{ marginBottom: '10px', fontSize: '1rem', fontWeight: '500' }}>
-                      {recText}
-                    </div>
-                    
-                    {(timeline || impact) && (
-                      <div className="details-grid" style={{ marginTop: '10px' }}>
-                        {timeline && (
-                          <div className="detail-item">
-                            <strong>Timeline:</strong> {timeline}
-                          </div>
-                        )}
-                        {impact && (
-                          <div className="detail-item">
-                            <strong>Expected Impact:</strong> {impact}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {rec.success_metrics && (
-                      <div style={{ 
-                        marginTop: '10px', 
-                        padding: '10px', 
-                        backgroundColor: '#f0f9ff', 
-                        borderRadius: '4px',
-                        border: '1px solid #bae6fd'
-                      }}>
-                        <strong style={{ color: '#0c4a6e' }}>📊 Success Metrics:</strong>
-                        <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
-                          {rec.success_metrics.map((metric, i) => (
-                            <li key={i} style={{ fontSize: '0.9em', color: '#0c4a6e' }}>{metric}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
+    <div className="section enhanced-data">
+      <h3>🔍 Enhanced Data Analysis</h3>
+      
+      <div className="data-sources-grid">
+        {/* UPDATED: Economic Indicators with improved formatting */}
+        <div className="data-source-item">
+          <h5>📊 Economic Indicators</h5>
+          {hasEconomicData ? (
+            <div className="economic-data">
+              {Object.entries(economicData).map(([country, data]) => (
+                <div key={country} className="country-economic-data">
+                  <strong>{country}:</strong> GDP per capita ${data.gdp_per_capita?.toLocaleString() || 'N/A'}
+                  <br />
+                  <span className={`risk-indicator ${data.economic_risk_factor || 'unknown'}`}>
+                    Economic Risk: {capitalizeFirst(data.economic_risk_factor || 'Unknown')}
+                  </span>
+                  {data.year && (
+                    <>
+                      <br />
+                      <small style={{color: '#666'}}>Year: {data.year}</small>
+                    </>
+                  )}
                 </div>
-              </div>
+              ))}
             </div>
-          );
-        })}
+          ) : (
+            <div className="no-data">
+              <p>No economic data available</p>
+              <small style={{color: '#999', fontSize: '0.8em'}}>
+                Debug: economic_indicators type = {typeof enhancedData.economic_indicators}, 
+                keys = {enhancedData.economic_indicators ? Object.keys(enhancedData.economic_indicators).length : 0}
+              </small>
+            </div>
+          )}
+        </div>
+
+        {/* UPDATED: Enhanced News with "coming soon" message */}
+        <div className="data-source-item">
+          <h5>📰 Enhanced News Analysis</h5>
+          <div className="news-coming-soon">
+            <p style={{
+              color: '#666', 
+              fontStyle: 'italic',
+              textAlign: 'center',
+              padding: '20px',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '4px',
+              border: '1px dashed #ddd'
+            }}>
+              📰 Enhanced news analysis coming soon
+            </p>
+            <small style={{color: '#999', fontSize: '0.8em', textAlign: 'center', display: 'block', marginTop: '8px'}}>
+              We're working on integrating premium news sources for more comprehensive labor rights coverage
+            </small>
+          </div>
+        </div>
+
+        {/* Data Sources */}
+        <div className="data-source-item">
+          <h5>🔗 Data Sources Used</h5>
+          {hasDataSources ? (
+            <ul className="data-sources-list">
+              {dataSources.map((source, index) => (
+                <li key={index}>{source}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="no-data">
+              <p>No data sources information available</p>
+              <small style={{color: '#999', fontSize: '0.8em'}}>
+                Debug: data_sources_used type = {typeof enhancedData.data_sources_used}, 
+                isArray = {Array.isArray(enhancedData.data_sources_used)}, 
+                length = {enhancedData.data_sources_used?.length || 0}
+              </small>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* API Risk Factors */}
+      {hasApiRiskFactors && (
+        <div className="api-risk-factors">
+          <h5>⚠️ Additional Risk Factors from External Data</h5>
+          <div className="api-factors-grid">
+            {apiRiskFactors.map((factor, index) => (
+              <div key={index} className="api-risk-factor">
+                <div className="factor-header">
+                  <strong>{factor.factor}</strong>
+                  <span className={`impact-badge ${factor.impact || 'unknown'}`}>
+                    {(factor.impact || 'unknown').toUpperCase()} IMPACT
+                  </span>
+                </div>
+                <div className="factor-evidence">{factor.evidence}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Debug Section - Only show in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <details style={{marginTop: '20px', fontSize: '12px', color: '#666'}}>
+          <summary style={{cursor: 'pointer'}}>🔧 Debug: Raw Data Structure</summary>
+          <pre style={{background: '#f8f9fa', padding: '10px', borderRadius: '4px', overflow: 'auto', maxHeight: '200px'}}>
+            {JSON.stringify(enhancedData, null, 2)}
+          </pre>
+        </details>
+      )}
     </div>
   );
 };
 
-// Main App Component
 function App() {
   const [companyName, setCompanyName] = useState('');
   const [results, setResults] = useState(null);
@@ -706,24 +785,37 @@ function App() {
         if (prev >= 95) return prev;
         return prev + Math.random() * 10 + 5;
       });
-    }, 800);
+    }, 400);
     
     try {
-      // Use the AI-powered backend endpoint
-      const response = await fetch(`http://localhost:5000/assess?company=${encodeURIComponent(companyName.trim())}`);
+      const response = await fetch('https://modern-slavery-tool-production.up.railway.app/assess', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          company_name: companyName.trim(),
+          assessment_type: 'comprehensive',
+          options: {
+            include_supply_chain: true,
+            include_news: true,
+            include_legal: true,
+            include_financial: true,
+            geographic_scope: 'global',
+            timeframe_months: 12,
+            risk_threshold: 'medium',
+            include_benchmarking: true,
+            include_mapping: true
+          }
+        }),
+      });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || `Server error: ${response.status}`);
+        throw new Error(`Server error: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log("AI-powered results:", data);
-
-      // Check for errors in response
-      if (data.error) {
-        throw new Error(data.details || data.error);
-      }
+      console.log("Full results:", data);
 
       // Complete progress
       clearInterval(progressInterval);
@@ -737,11 +829,27 @@ function App() {
       }, 500);
 
     } catch (err) {
-      console.error('AI Assessment error:', err);
+      console.error('Assessment error:', err);
       clearInterval(progressInterval);
-      setError(`AI assessment failed: ${err.message}. Please ensure the AI backend is running.`);
+      setError('Failed to assess company. Please try again later.');
       setLoading(false);
       setProgress(0);
+    }
+  };
+
+  const getRiskColor = (riskLevel) => {
+    if (!riskLevel) return '#6c757d';
+    switch (riskLevel.toLowerCase()) {
+      case 'low':
+      case 'very-low':
+        return '#28a745';
+      case 'medium':
+        return '#ffc107';
+      case 'high':
+      case 'very-high':
+        return '#dc3545';
+      default:
+        return '#6c757d';
     }
   };
 
@@ -759,431 +867,316 @@ function App() {
   };
 
   return (
-    <div style={{ 
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      margin: 0,
-      padding: '20px',
-      backgroundColor: '#f8fafc',
-      minHeight: '100vh'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <header style={{ 
-          textAlign: 'center', 
-          marginBottom: '40px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          padding: '40px',
-          borderRadius: '12px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', marginBottom: '20px' }}>
-            <h2 style={{ margin: 0 }}>🤖 AI-Powered Rosetta Solutions</h2>
+    <div className="App">
+      <div className="container">
+        <header className="header">
+          <div className="brand-section">
+            <div className="logo-line">
+              <a 
+                href="https://www.rosettasolutions.com.au" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="company-logo-link"
+                style={{display: 'flex', alignItems: 'center', gap: '15px', textDecoration: 'none', color: 'inherit'}}
+              >
+                <img src="/rosetta-logo.png" alt="Rosetta Solutions Logo" className="company-logo" />
+                <h2 className="company-name">Rosetta Solutions</h2>
+              </a>
+            </div>
+            <div className="title-line">
+              <h1 className="main-title">Modern Slavery Risk Assessment</h1>
+            </div>
+            <p className="subtitle">AI-Powered Analysis | Industry Benchmarking | Global Supply Chain Mapping</p>
           </div>
-          <h1 style={{ fontSize: '2.5rem', margin: '0 0 15px 0', fontWeight: '700' }}>
-            Modern Slavery Risk Assessment
-          </h1>
-          <p style={{ fontSize: '1.2rem', margin: 0, opacity: 0.9 }}>
-            Real-Time AI Analysis | Dynamic Risk Assessment | Global Intelligence
-          </p>
         </header>
           
-        <div style={{ marginBottom: '30px' }}>
-          <form onSubmit={handleSubmit} style={{ 
-            display: 'flex', 
-            gap: '15px', 
-            maxWidth: '600px', 
-            margin: '0 auto',
-            padding: '20px',
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-          }}>
-            <input
-              type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Enter any company name for AI analysis..."
-              style={{
-                flex: 1,
-                padding: '15px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '8px',
-                fontSize: '16px',
-                outline: 'none',
-                transition: 'border-color 0.2s'
-              }}
-              disabled={loading}
-            />
-            <button 
-              type="submit" 
-              disabled={loading || !companyName.trim()}
-              style={{
-                padding: '15px 30px',
-                background: loading ? '#94a3b8' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                minWidth: '120px',
-                justifyContent: 'center'
-              }}
-            >
-              {loading ? (
-                <>
-                  <div style={{
-                    width: '20px',
-                    height: '20px',
-                    border: '2px solid rgba(255,255,255,0.3)',
-                    borderTop: '2px solid white',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }}></div>
-                  {Math.round(progress)}%
-                </>
-              ) : (
-                '🤖 AI Analyze'
-              )}
-            </button>
+        <div className="assessment-section">
+          <form onSubmit={handleSubmit} className="assessment-form">
+            <div className="input-group">
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Enter company name (e.g., Apple, Nike, Walmart, Tesla)"
+                className="company-input"
+                disabled={loading}
+              />
+              <button 
+                type="submit" 
+                disabled={loading || !companyName.trim()}
+                className="assess-button"
+              >
+                {loading ? (
+                  <>
+                    <div className="circular-progress-container">
+                      <svg className="circular-progress" width="32" height="32">
+                        <circle 
+                          cx="16" 
+                          cy="16" 
+                          r="14" 
+                          stroke="rgba(255,255,255,0.3)" 
+                          strokeWidth="2" 
+                          fill="none"
+                        />
+                        <circle 
+                          cx="16" 
+                          cy="16" 
+                          r="14" 
+                          stroke="#ffffff" 
+                          strokeWidth="2" 
+                          fill="none"
+                          strokeDasharray="87.96"
+                          strokeDashoffset={87.96 - (87.96 * progress) / 100}
+                          className="progress-circle"
+                        />
+                      </svg>
+                      <div className="progress-percentage">{Math.round(progress)}%</div>
+                    </div>
+                    Analyzing...
+                  </>
+                ) : (
+                  'Assess Company'
+                )}
+              </button>
+            </div>
           </form>
 
           {error && (
-            <div style={{
-              margin: '20px auto',
-              maxWidth: '600px',
-              padding: '15px',
-              background: '#fee2e2',
-              border: '1px solid #fecaca',
-              borderRadius: '8px',
-              color: '#dc2626'
-            }}>
+            <div className="alert error">
               <strong>Error:</strong> {error}
             </div>
           )}
           
           {results && (
-            <div style={{ marginTop: '30px' }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                marginBottom: '20px',
-                padding: '20px',
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-              }}>
-                <h2 style={{ margin: 0 }}>🤖 AI Assessment: {companyName}</h2>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button 
-                    onClick={handleExport}
-                    style={{
-                      padding: '10px 20px',
-                      background: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    📊 Export AI Data
+            <div className="results-container">
+              <div className="results-header">
+                <h2>Assessment Results for: {companyName}</h2>
+                <div className="header-buttons">
+                  <button onClick={handleExport} className="export-button">
+                    📊 Export Data
                   </button>
-                  <button 
-                    onClick={clearResults}
-                    style={{
-                      padding: '10px 20px',
-                      background: '#6b7280',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    New Analysis
+                  <button onClick={clearResults} className="clear-button">
+                    New Assessment
                   </button>
                 </div>
               </div>
               
-              {/* AI Risk Overview */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '20px',
-                marginBottom: '30px'
-              }}>
-                <div style={{
-                  padding: '20px',
-                  backgroundColor: 'white',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  textAlign: 'center'
-                }}>
-                  <h3 style={{ margin: '0 0 10px 0' }}>Overall Risk</h3>
-                  <div style={{
-                    fontSize: '2rem',
-                    fontWeight: 'bold',
-                    color: getRiskColor(results.overall_risk_assessment?.overall_risk_score || 50)
-                  }}>
-                    {Math.round(results.overall_risk_assessment?.overall_risk_score || 0)}
-                    <span style={{ fontSize: '1rem', opacity: 0.7 }}>/100</span>
-                  </div>
-                  <div style={{
-                    marginTop: '10px',
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    backgroundColor: getRiskColor(results.overall_risk_assessment?.overall_risk_score || 50),
-                    color: 'white',
-                    fontSize: '0.9rem',
-                    fontWeight: '600'
-                  }}>
-                    {results.overall_risk_assessment?.risk_category || 'Unknown'}
+              <div className="risk-overview">
+                <div className="risk-card">
+                  <h3>Overall Risk Level</h3>
+                  <div 
+                    className="risk-badge"
+                    style={{ backgroundColor: getRiskColor(results.overall_risk_level || results.risk_level) }}
+                  >
+                    {(results.overall_risk_level || results.risk_level || 'Unknown').toUpperCase()}
                   </div>
                 </div>
                 
-                <div style={{
-                  padding: '20px',
-                  backgroundColor: 'white',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  textAlign: 'center'
-                }}>
-                  <h3 style={{ margin: '0 0 10px 0' }}>Data Quality</h3>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
-                    {Math.round(results.assessment_quality?.data_completeness || 85)}%
+                <div className="risk-card">
+                  <h3>Risk Score</h3>
+                  <div className="risk-score">
+                    {results.overall_risk_score || results.risk_score || 'N/A'}
+                    <span className="score-max">/100</span>
                   </div>
-                  <div style={{ marginTop: '5px', fontSize: '0.9rem', color: '#6b7280' }}>
-                    {results.assessment_quality?.confidence_level || 'High'} Confidence
+                </div>
+                
+                <div className="risk-card">
+                  <h3>Manufacturing Sites</h3>
+                  <div className="risk-score">
+                    {results.manufacturing_locations ? results.manufacturing_locations.length : 0}
                   </div>
                 </div>
 
-                <div style={{
-                  padding: '20px',
-                  backgroundColor: 'white',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  textAlign: 'center'
-                }}>
-                  <h3 style={{ margin: '0 0 10px 0' }}>AI Analysis</h3>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>
-                    ✓ Complete
-                  </div>
-                  <div style={{ marginTop: '5px', fontSize: '0.9rem', color: '#6b7280' }}>
-                    Dynamic Assessment
-                  </div>
-                </div>
-
-                <div style={{
-                  padding: '20px',
-                  backgroundColor: 'white',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  textAlign: 'center'
-                }}>
-                  <h3 style={{ margin: '0 0 10px 0' }}>Recommendations</h3>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>
-                    {results.recommendations?.length || 0}
-                  </div>
-                  <div style={{ marginTop: '5px', fontSize: '0.9rem', color: '#6b7280' }}>
-                    AI-Generated Actions
+                <div className="risk-card">
+                  <h3>Data Sources</h3>
+                  <div className="risk-score">
+                    {results.data_sources ? Object.values(results.data_sources).reduce((a, b) => a + b, 0) : 0}
                   </div>
                 </div>
               </div>
 
               {/* Tab Navigation */}
-              <div style={{
-                display: 'flex',
-                gap: '10px',
-                marginBottom: '20px',
-                padding: '10px',
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                overflow: 'auto'
-              }}>
-                {[
-                  { key: 'overview', label: '📊 AI Overview', icon: '🤖' },
-                  { key: 'risk-assessment', label: '🎯 Risk Analysis', icon: '📊' },
-                  { key: 'country-analysis', label: '🌍 Country Intel', icon: '🌍' },
-                  { key: 'industry-analysis', label: '🏭 Industry Risks', icon: '🏭' },
-                  { key: 'mapping', label: '🗺️ AI Mapping', icon: '🗺️' },
-                  { key: 'news-sentiment', label: '📰 News AI', icon: '📰' },
-                  { key: 'recommendations', label: '💡 AI Actions', icon: '💡' }
-                ].map(tab => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    style={{
-                      padding: '12px 20px',
-                      border: 'none',
-                      borderRadius: '8px',
-                      background: activeTab === tab.key ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#f1f5f9',
-                      color: activeTab === tab.key ? 'white' : '#475569',
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      fontSize: '0.9rem',
-                      whiteSpace: 'nowrap',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+              <div className="tab-navigation">
+                <button 
+                  className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('overview')}
+                >
+                  Overview
+                </button>
+                <button 
+                  className={`tab-button ${activeTab === 'benchmarking' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('benchmarking')}
+                >
+                  Industry Benchmarking
+                </button>
+                <button 
+                  className={`tab-button ${activeTab === 'mapping' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('mapping')}
+                >
+                  Global Mapping
+                </button>
+                <button 
+                  className={`tab-button ${activeTab === 'enhanced' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('enhanced')}
+                >
+                  Enhanced Data
+                </button>
               </div>
 
               {/* Tab Content */}
-              <div style={{
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                padding: '30px',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-              }}>
+              <div className="tab-content">
                 {activeTab === 'overview' && (
-                  <div>
-                    <h3 style={{ marginTop: 0 }}>🤖 AI Company Analysis</h3>
-                    {results.company_profile && (
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: '15px',
-                        marginBottom: '30px'
-                      }}>
-                        <div><strong>Industry:</strong> {results.company_profile.industry || 'AI Analyzing...'}</div>
-                        <div><strong>Revenue:</strong> ${results.company_profile.revenue_billions || 'N/A'}B</div>
-                        <div><strong>Countries:</strong> {results.company_profile.countries_of_operation?.length || 0}</div>
-                        <div><strong>Assessment Method:</strong> {results.methodology || 'AI-powered dynamic assessment'}</div>
+                  <>
+                    {results.key_findings && results.key_findings.length > 0 && (
+                      <div className="section">
+                        <h3>🔍 Key Findings</h3>
+                        <ul className="findings-list">
+                          {results.key_findings.map((finding, index) => (
+                            <li key={index} className="finding-item">
+                              <span className="finding-text">
+                                {typeof finding === 'string' ? finding : finding.description}
+                              </span>
+                              {finding.severity && (
+                                <span className={`severity-badge ${finding.severity}`}>
+                                  {finding.severity.toUpperCase()}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {results.recommendations && results.recommendations.length > 0 && (
+                      <div className="section">
+                        <h3>💡 Recommendations</h3>
+                        <ul className="recommendations-list">
+                          {results.recommendations.map((rec, index) => (
+                            <li key={index} className="recommendation-item">
+                              <span className="rec-text">
+                                {typeof rec === 'string' ? rec : rec.description || rec.title}
+                              </span>
+                              {rec.priority && (
+                                <span className={`priority-badge ${rec.priority}`}>
+                                  {rec.priority.toUpperCase()} PRIORITY
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
 
-                    {results.overall_risk_assessment && (
-                      <AIRiskAssessment riskAssessment={results.overall_risk_assessment} />
+                    {/* UPDATED: Use the new grouped risk factors component */}
+                    {results.risk_factors && results.risk_factors.length > 0 && (
+                      <RiskFactorsGrouped riskFactors={results.risk_factors} />
                     )}
-                  </div>
+                    
+                    <div className="section">
+                      <h3>📊 Assessment Details</h3>
+                      <div className="details-grid">
+                        <div className="detail-item">
+                          <strong>Assessment Type:</strong> Comprehensive with Benchmarking & Mapping
+                        </div>
+                        <div className="detail-item">
+                          <strong>Date:</strong> {results.assessment_date || new Date().toLocaleDateString()}
+                        </div>
+                        <div className="detail-item">
+                          <strong>Confidence Level:</strong> {results.confidence_level || 'High'}
+                        </div>
+                        {results.assessment_id && (
+                          <div className="detail-item">
+                            <strong>Assessment ID:</strong> {results.assessment_id}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
 
-                {activeTab === 'risk-assessment' && (
-                  <AIRiskAssessment riskAssessment={results.overall_risk_assessment} />
-                )}
-
-                {activeTab === 'country-analysis' && (
-                  <AICountryAnalysis countryAnalysis={results.country_analysis} />
-                )}
-
-                {activeTab === 'industry-analysis' && (
-                  <AIIndustryAnalysis industryAnalysis={results.industry_analysis} />
+                {activeTab === 'benchmarking' && (
+                  <>
+                    <IndustryBenchmarking benchmarkData={results.industry_benchmarking} />
+                    
+                    <div className="section">
+                      <h3>📊 Assessment Details</h3>
+                      <div className="details-grid">
+                        <div className="detail-item">
+                          <strong>Benchmarking Source:</strong> Industry Database
+                        </div>
+                        <div className="detail-item">
+                          <strong>Peer Companies:</strong> {results.industry_benchmarking?.peer_companies?.length || 0} analyzed
+                        </div>
+                        <div className="detail-item">
+                          <strong>Data Quality:</strong> {results.industry_benchmarking?.data_quality || 'High'}
+                        </div>
+                        <div className="detail-item">
+                          <strong>Last Updated:</strong> {results.industry_benchmarking?.last_updated || new Date().toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 {activeTab === 'mapping' && (
-                  <AIManufacturingMap 
-                    locations={results.manufacturing_locations} 
-                    companyProfile={results.company_profile}
-                  />
+                  <>
+                    <ManufacturingMap 
+                      mapData={results.supply_chain_map} 
+                      locations={results.manufacturing_locations} 
+                    />
+                    
+                    <div className="section">
+                      <h3>📊 Assessment Details</h3>
+                      <div className="details-grid">
+                        <div className="detail-item">
+                          <strong>Locations Mapped:</strong> {results.manufacturing_locations?.length || 0}
+                        </div>
+                        <div className="detail-item">
+                          <strong>Coverage:</strong> Global Supply Chain
+                        </div>
+                        <div className="detail-item">
+                          <strong>Risk Assessment:</strong> Country-level analysis
+                        </div>
+                        <div className="detail-item">
+                          <strong>Map Data:</strong> OpenStreetMap
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
 
-                {activeTab === 'news-sentiment' && (
-                  <AINewsAnalysis newsAndSentiment={results.news_and_sentiment} />
-                )}
-
-                {activeTab === 'recommendations' && (
-                  <AIRecommendations recommendations={results.recommendations} />
+                {activeTab === 'enhanced' && (
+                  <>
+                    <EnhancedDataSources enhancedData={results.enhanced_data} />
+                    
+                    <div className="section">
+                      <h3>📊 Assessment Details</h3>
+                      <div className="details-grid">
+                        <div className="detail-item">
+                          <strong>Data Sources:</strong> {results.enhanced_data?.data_sources_used?.length || 0} external APIs
+                        </div>
+                        <div className="detail-item">
+                          <strong>News Articles:</strong> Enhanced analysis coming soon
+                        </div>
+                        <div className="detail-item">
+                          <strong>Economic Indicators:</strong> {Object.keys(results.enhanced_data?.economic_indicators || {}).length} countries
+                        </div>
+                        <div className="detail-item">
+                          <strong>Analysis Depth:</strong> Enhanced AI Processing
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
           )}
         </div>
         
-        <footer style={{
-          textAlign: 'center',
-          padding: '20px',
-          backgroundColor: '#374151',
-          color: 'white',
-          borderRadius: '12px',
-          marginTop: '40px'
-        }}>
-          <p style={{ margin: 0 }}>
-            © 2025 Rosetta Solutions - AI-Powered Modern Slavery Risk Assessment. 
-            This tool provides AI-generated risk insights using real-time data analysis.
-          </p>
+        <footer className="footer">
+          <p>© 2025 Rosetta Solutions. This tool provides risk assessment guidance using AI analysis, industry benchmarking, and global mapping. Professional legal advice should be sought for specific situations.</p>
         </footer>
       </div>
-
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        .risk-groups-container {
-          display: grid;
-          gap: 20px;
-          margin-top: 20px;
-        }
-        
-        .risk-group {
-          border-radius: 8px;
-          overflow: hidden;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .risk-group-title {
-          margin: 0;
-          padding: 15px;
-          font-size: 1.1rem;
-          font-weight: 600;
-        }
-        
-        .risk-group-items {
-          padding: 0;
-        }
-        
-        .finding-item {
-          padding: 15px;
-          background: white;
-        }
-        
-        .finding-text {
-          line-height: 1.5;
-        }
-        
-        .findings-list {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-        
-        .findings-list .finding-item {
-          margin-bottom: 10px;
-          padding: 15px;
-          background: #f8fafc;
-          border-radius: 8px;
-          border-left: 4px solid #667eea;
-        }
-        
-        .details-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 15px;
-          margin-top: 15px;
-        }
-        
-        .detail-item {
-          padding: 10px;
-          background: #f8fafc;
-          border-radius: 6px;
-          border-left: 3px solid #e2e8f0;
-        }
-        
-        .no-data {
-          text-align: center;
-          padding: 40px;
-          background: #f8fafc;
-          border-radius: 8px;
-          color: #6b7280;
-        }
-      `}</style>
     </div>
   );
 }
