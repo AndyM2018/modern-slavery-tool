@@ -1,4 +1,4 @@
-# Enhanced AI-Powered Modern Slavery Assessment Backend with Hybrid Framework
+# Enhanced AI-Powered Modern Slavery Assessment Backend with Industry Benchmarking & Mapping
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
@@ -8,7 +8,7 @@ import time
 import re
 from urllib.parse import urljoin, urlparse
 import sqlite3
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 import json
 import numpy as np
 from collections import defaultdict
@@ -40,34 +40,22 @@ OPENAI_API_KEY = api_keys['openai']
 SERPER_API_KEY = api_keys['serper']
 NEWS_API_KEY = api_keys['news']
 
-# UPDATED: Data-driven country risk scores from Global Slavery Index
+# Risk Intelligence Database
 COUNTRY_RISK_INDEX = {
-    # Critical Risk (85-100) - Based on Global Slavery Index prevalence data
-    "North Korea": 95, "Afghanistan": 96, "Eritrea": 90, "Mauritania": 87,
-    "Myanmar": 88, "Iran": 85, "Saudi Arabia": 84,
-    
-    # Very High Risk (70-84)
-    "Pakistan": 83, "Turkey": 82, "Tajikistan": 80, "Bangladesh": 78,
-    "China": 78, "India": 76, "Cambodia": 75, "Nigeria": 74,
-    "Iraq": 72, "Thailand": 70,
-    
-    # High Risk (55-69)
-    "Vietnam": 68, "Philippines": 67, "Indonesia": 65, "Malaysia": 63,
-    "Russia": 60, "Egypt": 58, "Mexico": 55,
-    
-    # Medium Risk (35-54)
-    "Brazil": 52, "South Africa": 48, "Morocco": 45, "Jordan": 42,
-    
-    # Low Risk (15-34)
-    "United States": 18, "Japan": 20, "United Kingdom": 16, "Australia": 17,
-    "Canada": 15, "Germany": 12, "France": 14,
-    
-    # Very Low Risk (5-14)
-    "Netherlands": 8, "Denmark": 7, "Sweden": 10, "Norway": 9,
-    "Switzerland": 11, "Finland": 9, "New Zealand": 12, "Singapore": 20
+    "North Korea": 90, "Eritrea": 87, "Mauritania": 85, "Saudi Arabia": 82,
+    "Turkey": 80, "Tajikistan": 78, "United Arab Emirates": 76, "Russia": 74,
+    "Afghanistan": 95, "Myanmar": 88, "Iran": 85, "Pakistan": 83, "India": 81,
+    "China": 79, "Nigeria": 77, "Iraq": 75, "Democratic Republic of Congo": 93,
+    "Libya": 91, "Yemen": 89, "Syria": 87, "Cambodia": 84, "Bangladesh": 82,
+    "Thailand": 78, "Malaysia": 76, "Philippines": 74, "Vietnam": 72,
+    "Indonesia": 70, "Mexico": 68, "Brazil": 65, "South Africa": 63,
+    "Egypt": 75, "Morocco": 60, "Jordan": 58, "Lebanon": 73,
+    "United States": 15, "Canada": 12, "United Kingdom": 13, "Australia": 14,
+    "Germany": 11, "France": 12, "Japan": 16, "South Korea": 18,
+    "Netherlands": 8, "Sweden": 7, "Norway": 6, "Denmark": 5,
+    "Switzerland": 9, "Finland": 8, "New Zealand": 10, "Singapore": 20
 }
 
-# Keep existing industry risk scores
 INDUSTRY_RISK_INDEX = {
     "Fast Fashion": 98, "Textiles and Apparel": 95, "Garment Manufacturing": 96, 
     "Agriculture and Food": 92, "Electronics Manufacturing": 85, "Construction": 80, 
@@ -100,59 +88,12 @@ def clean_json_response(ai_response):
     
     return cleaned.strip()
 
-# NEW: Governance Dataset Integration
-class GovernanceDatasetManager:
-    def __init__(self, csv_path='governance_assessment_results.csv'):
-        """Initialize governance dataset manager"""
-        self.governance_df = None
-        self.csv_path = csv_path
-        self.load_governance_data()
-    
-    def load_governance_data(self):
-        """Load governance assessment results from CSV"""
-        try:
-            if os.path.exists(self.csv_path):
-                self.governance_df = pd.read_csv(self.csv_path)
-                print(f"✅ Loaded governance data for {len(self.governance_df)} companies")
-                return True
-            else:
-                print(f"⚠️ Governance dataset not found at {self.csv_path}")
-                return False
-        except Exception as e:
-            print(f"❌ Error loading governance dataset: {e}")
-            return False
-    
-    def get_company_governance_score(self, company_name):
-        """Get governance score from dataset"""
-        if self.governance_df is None:
-            return None
-        
-        # Exact match first
-        exact_match = self.governance_df[self.governance_df['Company_Name'] == company_name]
-        if not exact_match.empty:
-            return exact_match.iloc[0].to_dict()
-        
-        # Fuzzy match
-        fuzzy_match = self.governance_df[
-            self.governance_df['Company_Name'].str.contains(company_name, case=False, na=False)
-        ]
-        if not fuzzy_match.empty:
-            return fuzzy_match.iloc[0].to_dict()
-        
-        return None
-    
-    def is_available(self):
-        """Check if governance dataset is available"""
-        return self.governance_df is not None
-
 class EnhancedModernSlaveryAssessment:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
-        # NEW: Initialize governance dataset manager
-        self.governance_manager = GovernanceDatasetManager()
     
     def call_openai_api(self, messages, max_tokens=1500, temperature=0.1):
         """OpenAI API call with fresh API key"""
@@ -185,193 +126,6 @@ class EnhancedModernSlaveryAssessment:
             print(f"Error calling OpenAI API: {e}")
             return None
     
-    # NEW: Hybrid assessment method
-    def assess_operational_mitigation_with_ai(self, company_name, company_profile):
-        """Use AI to assess operational mitigation areas (65 points)"""
-        try:
-            prompt = f"""
-            Assess {company_name}'s operational modern slavery mitigation practices.
-            
-            Company Context: {company_profile}
-            
-            Focus on these specific areas (governance already assessed separately):
-            
-            1. DUE DILIGENCE & AUDITING (30 points max):
-               - Supplier audit frequency and scope
-               - Third-party vs internal audits
-               - Audit effectiveness and follow-up
-               - Beyond tier-1 supplier monitoring
-            
-            2. SUPPLY CHAIN MAPPING (20 points max):
-               - Supply chain visibility depth (tiers mapped)
-               - Supplier disclosure and transparency
-               - Critical supplier identification
-               - Supply chain risk mapping
-            
-            3. WORKER PROTECTION (15 points max):
-               - Worker grievance mechanisms
-               - Worker training programs
-               - Whistleblower protections
-               - Direct worker engagement
-            
-            Be specific about {company_name}'s actual practices, not generic industry practices.
-            
-            Respond with ONLY valid JSON:
-            {{
-                "due_diligence_score": integer_0_to_30,
-                "supply_chain_mapping_score": integer_0_to_20,
-                "worker_protection_score": integer_0_to_15,
-                "evidence_quality": "high|medium|low",
-                "key_findings": ["finding1", "finding2"],
-                "data_gaps": ["gap1", "gap2"]
-            }}
-            """
-            
-            messages = [
-                {"role": "system", "content": "You are an expert in corporate modern slavery risk assessment with deep knowledge of operational mitigation practices."},
-                {"role": "user", "content": prompt}
-            ]
-            
-            ai_response = self.call_openai_api(messages, max_tokens=1000, temperature=0.1)
-            
-            if ai_response:
-                try:
-                    cleaned_response = clean_json_response(ai_response)
-                    result = json.loads(cleaned_response)
-                    result['assessment_method'] = 'ai_operational'
-                    return result
-                except json.JSONDecodeError as e:
-                    print(f"Error parsing AI operational assessment: {e}")
-            
-            # Fallback
-            return {
-                "due_diligence_score": 15,
-                "supply_chain_mapping_score": 10,
-                "worker_protection_score": 8,
-                "evidence_quality": "low",
-                "key_findings": ["Limited operational data available"],
-                "data_gaps": ["Audit practices", "Supply chain depth"],
-                "assessment_method": "fallback_operational"
-            }
-            
-        except Exception as e:
-            print(f"Error in AI operational assessment: {e}")
-            return {
-                "due_diligence_score": 15,
-                "supply_chain_mapping_score": 10,
-                "worker_protection_score": 8,
-                "evidence_quality": "low",
-                "key_findings": ["AI assessment failed"],
-                "data_gaps": ["All operational areas"],
-                "assessment_method": "fallback_operational"
-            }
-    
-    # NEW: Hybrid risk calculation
-    def calculate_hybrid_risk_assessment(self, company_name, profile, geographic_risk, industry_risk, enhanced_api_data):
-        """Calculate risk using hybrid approach: dataset governance + AI operational"""
-        
-        # Step 1: Check governance dataset
-        governance_data = self.governance_manager.get_company_governance_score(company_name)
-        
-        if governance_data:
-            print(f"✅ Found {company_name} in governance dataset")
-            governance_score = governance_data['Total_Dataset_Score']  # 0-35 points
-            history_modifier = governance_data['History_Modifier']
-            data_source = "hybrid_dataset_ai"
-            confidence = "high"
-            
-            # Step 2: Use AI for operational assessment (65 points)
-            company_context = {
-                'name': company_name,
-                'headquarters': profile.get('headquarters'),
-                'countries': profile.get('operating_countries', []),
-                'industries': profile.get('all_industries', []),
-                'business_model': profile.get('business_model', '')
-            }
-            
-            operational_assessment = self.assess_operational_mitigation_with_ai(company_name, company_context)
-            
-        else:
-            print(f"⚠️ {company_name} not found in governance dataset, using full AI assessment")
-            # Fall back to existing comprehensive AI analysis
-            company_data = {
-                'profile': profile,
-                'geographic_risk': geographic_risk,
-                'industry_risk': industry_risk
-            }
-            
-            ai_analysis = self.comprehensive_ai_analysis(company_data)
-            
-            # Convert AI analysis to hybrid format
-            governance_score = 0  # No dataset governance score
-            history_modifier = 1.0
-            operational_assessment = {
-                "due_diligence_score": ai_analysis.get('category_scores', {}).get('due_diligence', 50) * 0.3,  # Convert to 30-point scale
-                "supply_chain_mapping_score": ai_analysis.get('category_scores', {}).get('operational_practices', 50) * 0.2,  # Convert to 20-point scale
-                "worker_protection_score": ai_analysis.get('category_scores', {}).get('policy_governance', 50) * 0.15,  # Convert to 15-point scale
-                "evidence_quality": ai_analysis.get('confidence_level', 'medium'),
-                "key_findings": [f['description'] for f in ai_analysis.get('key_findings', [])[:2]],
-                "data_gaps": ["Full AI assessment used"],
-                "assessment_method": "full_ai_fallback"
-            }
-            
-            data_source = "ai_only"
-            confidence = ai_analysis.get('confidence_level', 'medium')
-        
-        # Step 3: Calculate total mitigation score
-        total_mitigation_score = (
-            governance_score +  # 0-35 points from dataset or 0 if not found
-            operational_assessment['due_diligence_score'] +  # 0-30 points from AI
-            operational_assessment['supply_chain_mapping_score'] +  # 0-20 points from AI
-            operational_assessment['worker_protection_score']  # 0-15 points from AI
-        )
-        
-        # Apply history modifier
-        final_mitigation_score = total_mitigation_score * history_modifier
-        
-        # Convert to risk reduction percentage (max 75%)
-        max_possible_score = 100  # 35 + 30 + 20 + 15
-        risk_reduction_factor = min(final_mitigation_score / max_possible_score * 0.75, 0.75)
-        
-        # Step 4: Calculate final risk score
-        inherent_score = (geographic_risk['score'] + industry_risk['score']) / 2
-        final_risk_score = inherent_score * (1 - risk_reduction_factor)
-        final_risk_score = max(5, min(95, final_risk_score))
-        
-        # Determine risk level and grade
-        if final_risk_score >= 85: risk_level = "Critical"
-        elif final_risk_score >= 70: risk_level = "Very High"
-        elif final_risk_score >= 55: risk_level = "High"
-        elif final_risk_score >= 40: risk_level = "Medium"
-        elif final_risk_score >= 25: risk_level = "Low"
-        else: risk_level = "Very Low"
-        
-        if risk_reduction_factor >= 0.6: grade = 'A'
-        elif risk_reduction_factor >= 0.45: grade = 'B'
-        elif risk_reduction_factor >= 0.3: grade = 'C'
-        elif risk_reduction_factor >= 0.15: grade = 'D'
-        else: grade = 'F'
-        
-        return {
-            'final_risk_score': round(final_risk_score, 1),
-            'final_risk_level': risk_level,
-            'inherent_risk_score': round(inherent_score, 1),
-            'mitigation_assessment': {
-                'governance_score': governance_score,
-                'operational_assessment': operational_assessment,
-                'total_mitigation_score': round(final_mitigation_score, 1),
-                'risk_reduction_percentage': round(risk_reduction_factor * 100, 1),
-                'mitigation_grade': grade,
-                'history_modifier': history_modifier
-            },
-            'assessment_metadata': {
-                'data_source': data_source,
-                'confidence_level': confidence,
-                'governance_from_dataset': governance_data is not None,
-                'assessment_date': date.today().isoformat()
-            }
-        }
-
     def get_company_profile(self, company_name):
         """Enhanced company profile with AI intelligence"""
         try:
@@ -1660,31 +1414,30 @@ class EnhancedModernSlaveryAssessment:
             print(f"Error searching news: {e}")
             return []
     
-    # MODIFIED: Main assessment function to use hybrid approach
     def assess_company(self, company_name):
-        """Main comprehensive assessment function with HYBRID approach"""
+        """Main comprehensive assessment function with IMPROVED enhanced data"""
         try:
-            print(f"Starting hybrid assessment for: {company_name}")
+            print(f"Starting AI-powered assessment for: {company_name}")
             
             # Step 1: Build comprehensive company profile with AI
             profile = self.get_company_profile(company_name)
             print(f"Profile: {profile.get('name')} - {profile.get('primary_industry')}")
             
-            # Step 2: Calculate enhanced geographic risk (using updated country scores)
+            # Step 2: Calculate enhanced geographic risk
             geo_risk_score, geo_details = self.calculate_geographic_risk(
                 profile.get('operating_countries', []),
                 profile.get('headquarters')
             )
             print(f"Geographic risk: {geo_risk_score}")
             
-            # Step 3: Calculate enhanced industry risk (unchanged)
+            # Step 3: Calculate enhanced industry risk
             industry_risk_score, industry_details = self.calculate_industry_risk(
                 profile.get('all_industries', []),
                 profile.get('business_model', '')
             )
             print(f"Industry risk: {industry_risk_score}")
             
-            # Step 4: Get manufacturing locations and map data (unchanged)
+            # Step 4: Get manufacturing locations and map data
             manufacturing_locations = self.get_manufacturing_locations(
                 company_name, 
                 profile.get('operating_countries', [])
@@ -1695,56 +1448,56 @@ class EnhancedModernSlaveryAssessment:
                 company_name
             )
             
-            # Step 5: Gather news data (unchanged)
+            # Step 5: Gather news data
             news_data = self.search_news_incidents(company_name)
             print(f"Found {len(news_data)} news articles")
             
-            # Step 6: Enhanced API data (unchanged)
+            # Step 6: IMPROVED Enhanced API data (this was the main issue)
             print("🚀 Getting enhanced API data...")
             enhanced_api_data = self.enhance_assessment_with_apis(
                 company_name,
                 profile.get('operating_countries', [])
             )
+            print(f"✅ Enhanced data structure: {list(enhanced_api_data.keys())}")
+            print(f"📊 Economic indicators: {len(enhanced_api_data.get('economic_indicators', {}))}")
+            print(f"📰 News articles: {len(enhanced_api_data.get('enhanced_news', []))}")
+            print(f"🔗 Data sources: {len(enhanced_api_data.get('data_sources_used', []))}")
             
-            # Step 7: NEW - Hybrid risk assessment
-            geographic_risk = {'score': geo_risk_score, 'details': geo_details}
-            industry_risk = {'score': industry_risk_score, 'details': industry_details}
+            # Step 7: AI-powered comprehensive analysis
+            company_data = {
+                'profile': profile,
+                'geographic_risk': {'score': geo_risk_score, 'details': geo_details},
+                'industry_risk': {'score': industry_risk_score, 'details': industry_details},
+                'news': news_data
+            }
             
-            hybrid_assessment = self.calculate_hybrid_risk_assessment(
-                company_name, profile, geographic_risk, industry_risk, enhanced_api_data
-            )
+            print("Performing AI-powered comprehensive analysis...")
+            ai_analysis = self.comprehensive_ai_analysis(company_data)
             
-            # Step 8: Generate industry benchmarking (unchanged)
+            # Step 8: Generate industry benchmarking
             industry_comparison = self.generate_industry_comparison(
-                hybrid_assessment['final_risk_score'],
+                ai_analysis['overall_risk_score'],
                 profile.get('all_industries', []),
                 profile.get('primary_industry')
             )
             
-            # Step 9: Merge API risk factors (unchanged)
+            # Step 9: Merge API risk factors with existing risk factors
             if enhanced_api_data.get('api_risk_factors'):
-                existing_factors = hybrid_assessment.get('mitigation_assessment', {}).get('operational_assessment', {}).get('key_findings', [])
+                existing_factors = ai_analysis.get('risk_factors', [])
                 combined_factors = existing_factors + enhanced_api_data['api_risk_factors']
-                # Add to response
+                ai_analysis['risk_factors'] = combined_factors
             
-            # Step 10: Format final response (enhanced with hybrid data)
+            # Step 10: Format final response
             final_assessment = {
                 'company_name': company_name,
-                'assessment_id': f"HYBRID_{int(time.time())}",
+                'assessment_id': f"ASSESS_{int(time.time())}",
                 'assessment_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 
-                'overall_risk_level': hybrid_assessment['final_risk_level'],
-                'overall_risk_score': hybrid_assessment['final_risk_score'],
-                'confidence_level': hybrid_assessment['assessment_metadata']['confidence_level'],
+                'overall_risk_level': ai_analysis['overall_risk_level'],
+                'overall_risk_score': ai_analysis['overall_risk_score'],
+                'confidence_level': ai_analysis.get('confidence_level', 'high'),
                 
-                # Enhanced category breakdown
-                'category_scores': {
-                    'governance': hybrid_assessment['mitigation_assessment']['governance_score'],
-                    'due_diligence': hybrid_assessment['mitigation_assessment']['operational_assessment']['due_diligence_score'],
-                    'supply_chain_mapping': hybrid_assessment['mitigation_assessment']['operational_assessment']['supply_chain_mapping_score'],
-                    'worker_protection': hybrid_assessment['mitigation_assessment']['operational_assessment']['worker_protection_score']
-                },
-                
+                'category_scores': ai_analysis.get('category_scores', {}),
                 'geographic_risk': {
                     'score': geo_risk_score,
                     'level': self.score_to_level(geo_risk_score),
@@ -1758,41 +1511,39 @@ class EnhancedModernSlaveryAssessment:
                     'details': industry_details
                 },
                 
-                # Hybrid-specific data
-                'hybrid_assessment': hybrid_assessment,
-                
-                'key_findings': hybrid_assessment['mitigation_assessment']['operational_assessment'].get('key_findings', []),
-                'recommendations': [],  # Could be enhanced further
-                'risk_factors': [],     # Could be enhanced further
-                'risk_indicators': hybrid_assessment['mitigation_assessment']['operational_assessment'].get('key_findings', []),
+                'key_findings': ai_analysis.get('key_findings', []),
+                'recommendations': ai_analysis.get('recommendations', []),
+                'risk_factors': ai_analysis.get('risk_factors', []),
+                'risk_indicators': [f['description'] for f in ai_analysis.get('key_findings', [])],  # For frontend compatibility
                 
                 'company_profile': profile,
                 'manufacturing_locations': manufacturing_locations,
                 'supply_chain_map': supply_chain_map,
                 'industry_benchmarking': industry_comparison,
-                'enhanced_data': enhanced_api_data,
+                'enhanced_data': enhanced_api_data,  # This is the key fix - properly structured enhanced data
                 
                 'data_sources': {
                     'news_articles': len(news_data),
                     'geographic_data': len(profile.get('operating_countries', [])),
                     'industry_data': len(profile.get('all_industries', [])),
                     'manufacturing_sites': len(manufacturing_locations),
-                    'api_sources': len(enhanced_api_data.get('data_sources_used', [])),
-                    'governance_dataset': hybrid_assessment['assessment_metadata']['governance_from_dataset']
+                    'api_sources': len(enhanced_api_data.get('data_sources_used', []))
                 },
                 
                 'status': 'completed'
             }
             
-            print(f"✅ Hybrid assessment completed for {company_name}")
-            print(f"📊 Data source: {hybrid_assessment['assessment_metadata']['data_source']}")
-            print(f"📊 Governance from dataset: {hybrid_assessment['assessment_metadata']['governance_from_dataset']}")
-            print(f"📊 Final risk score: {hybrid_assessment['final_risk_score']}")
+            print(f"✅ AI-powered assessment completed for {company_name}")
+            print(f"📊 Final enhanced_data structure verification:")
+            print(f"   - enhanced_data exists: {bool(final_assessment.get('enhanced_data'))}")
+            print(f"   - economic_indicators: {len(final_assessment.get('enhanced_data', {}).get('economic_indicators', {}))}")
+            print(f"   - enhanced_news: {len(final_assessment.get('enhanced_data', {}).get('enhanced_news', []))}")
+            print(f"   - data_sources_used: {len(final_assessment.get('enhanced_data', {}).get('data_sources_used', []))}")
             
             return final_assessment
             
         except Exception as e:
-            print(f"Error in hybrid assessment: {e}")
+            print(f"Error in comprehensive assessment: {e}")
             return {
                 'error': f'Assessment failed: {str(e)}',
                 'company_name': company_name,
@@ -1876,18 +1627,11 @@ def get_status():
     current_serper_key = os.getenv("SERPER_API_KEY", "")
     current_news_key = os.getenv("NEWS_API_KEY", "")
     
-    # Check governance dataset
-    governance_manager = GovernanceDatasetManager()
-    governance_available = governance_manager.is_available()
-    governance_count = len(governance_manager.governance_df) if governance_available else 0
-    
     return jsonify({
         'status': 'healthy',
-        'message': 'Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework',
+        'message': 'Enhanced AI-Powered Modern Slavery Assessment API with Industry Benchmarking & Mapping',
         'features': [
             'GPT-4o powered intelligent analysis',
-            'Hybrid assessment: Dataset governance + AI operational',
-            'Updated country risk scores from Global Slavery Index',
             'Dynamic industry benchmarking with real data',
             'Global manufacturing mapping',
             'Enhanced geographic risk calculation',
@@ -1895,18 +1639,14 @@ def get_status():
             'Comprehensive company profiling',
             'Supply chain visualization',
             'Free API data integration (World Bank, GDELT, OpenStreetMap)',
-            'Differentiated risk scoring (5-95 range)',
-            'Company-specific intelligence gathering'
+            'Differentiated risk scoring (15-95 range)',
+            'Company-specific intelligence gathering',
+            'FIXED: Guaranteed enhanced data with fallbacks'
         ],
         'api_keys_configured': {
             'openai': bool(current_openai_key and len(current_openai_key) > 20),
             'serper': bool(current_serper_key and len(current_serper_key) > 10),
             'news_api': bool(current_news_key and len(current_news_key) > 10)
-        },
-        'governance_dataset': {
-            'available': governance_available,
-            'companies_count': governance_count,
-            'path': 'governance_assessment_results.csv'
         }
     })
 
@@ -1953,7 +1693,7 @@ def search_companies():
     return jsonify({"companies": suggestions})
 
 if __name__ == '__main__':
-    print("🚀 Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework Starting...")
+    print("🚀 Enhanced AI-Powered Modern Slavery Assessment API Starting...")
     print("📡 Backend running on: http://localhost:5000")
     
     # Check API keys at startup using fresh reads
@@ -1964,22 +1704,19 @@ if __name__ == '__main__':
     print("🔑 OpenAI API Key configured:", "✅" if startup_openai_key and len(startup_openai_key) > 20 else "❌")
     print("🔑 Serper API Key configured:", "✅" if startup_serper_key and len(startup_serper_key) > 10 else "❌")
     print("🔑 News API Key configured:", "✅" if startup_news_key and len(startup_news_key) > 10 else "❌")
-    
-    # Check governance dataset
-    governance_manager = GovernanceDatasetManager()
-    if governance_manager.is_available():
-        print(f"✅ Governance dataset loaded: {len(governance_manager.governance_df)} companies")
-    else:
-        print("⚠️ Governance dataset not found - will use AI-only assessments")
-    
     print("🧠 Using GPT-4o for intelligent, differentiated risk assessment")
-    print("🎯 NEW Hybrid Features:")
-    print("   - Dataset-driven governance assessment (35 points)")
-    print("   - AI-powered operational assessment (65 points)")
-    print("   - Updated country risk scores from Global Slavery Index")
-    print("   - Enhanced confidence levels based on data source")
-    print("   - Backward compatible with existing API")
-    print("🌐 Ready for hybrid AI-powered assessments!")
+    print("🎯 Enhanced Features:")
+    print("   - Comprehensive company intelligence gathering")
+    print("   - Dynamic industry benchmarking with real data")
+    print("   - Global manufacturing mapping with geocoding")
+    print("   - Advanced geographic & industry risk calculation")
+    print("   - AI-powered specific risk analysis")
+    print("   - Free API integration (World Bank, GDELT, OpenStreetMap)")
+    print("   - Supply chain visualization and mapping")
+    print("   - Differentiated scoring (15-95 range)")
+    print("   - Fixed risk level thresholds for better differentiation")
+    print("   - ✨ FIXED: Guaranteed enhanced data with comprehensive fallbacks")
+    print("🌐 Ready for comprehensive AI-powered assessments with mapping and benchmarking!")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
