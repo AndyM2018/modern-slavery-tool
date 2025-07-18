@@ -187,12 +187,14 @@ class EnhancedModernSlaveryAssessment:
     
     # NEW: Hybrid assessment method
     def assess_operational_mitigation_with_ai(self, company_name, company_profile):
-        """Use AI to assess operational mitigation areas (65 points)"""
+        """Use AI to assess operational mitigation areas (65 points) - STRICTER SCORING"""
         try:
             prompt = f"""
-            Assess {company_name}'s operational modern slavery mitigation practices.
+            Assess {company_name}'s operational modern slavery mitigation practices with STRICTER evaluation.
             
             Company Context: {company_profile}
+            
+            BE CONSERVATIVE - Don't give high scores without strong evidence.
             
             Focus on these specific areas (governance already assessed separately):
             
@@ -214,6 +216,11 @@ class EnhancedModernSlaveryAssessment:
                - Whistleblower protections
                - Direct worker engagement
             
+            STRICTER SCORING - Athletic/Footwear brands like Nike should get:
+            - Due diligence: 15-20/30 (not 25+)
+            - Supply chain mapping: 8-12/20 (not 15+)
+            - Worker protection: 6-10/15 (not 12+)
+            
             Be specific about {company_name}'s actual practices, not generic industry practices.
             
             Respond with ONLY valid JSON:
@@ -228,7 +235,7 @@ class EnhancedModernSlaveryAssessment:
             """
             
             messages = [
-                {"role": "system", "content": "You are an expert in corporate modern slavery risk assessment with deep knowledge of operational mitigation practices."},
+                {"role": "system", "content": "You are an expert in corporate modern slavery risk assessment. Be CONSERVATIVE in scoring - don't give high scores without strong evidence of effective practices."},
                 {"role": "user", "content": prompt}
             ]
             
@@ -243,11 +250,11 @@ class EnhancedModernSlaveryAssessment:
                 except json.JSONDecodeError as e:
                     print(f"Error parsing AI operational assessment: {e}")
             
-            # Fallback
+            # Conservative fallback
             return {
-                "due_diligence_score": 15,
-                "supply_chain_mapping_score": 10,
-                "worker_protection_score": 8,
+                "due_diligence_score": 12,
+                "supply_chain_mapping_score": 8,
+                "worker_protection_score": 6,
                 "evidence_quality": "low",
                 "key_findings": ["Limited operational data available"],
                 "data_gaps": ["Audit practices", "Supply chain depth"],
@@ -257,16 +264,16 @@ class EnhancedModernSlaveryAssessment:
         except Exception as e:
             print(f"Error in AI operational assessment: {e}")
             return {
-                "due_diligence_score": 15,
-                "supply_chain_mapping_score": 10,
-                "worker_protection_score": 8,
+                "due_diligence_score": 12,
+                "supply_chain_mapping_score": 8,
+                "worker_protection_score": 6,
                 "evidence_quality": "low",
                 "key_findings": ["AI assessment failed"],
                 "data_gaps": ["All operational areas"],
                 "assessment_method": "fallback_operational"
             }
     
-    # NEW: Hybrid risk calculation
+    # UPDATED: Less generous risk reduction
     def calculate_hybrid_risk_assessment(self, company_name, profile, geographic_risk, industry_risk, enhanced_api_data):
         """Calculate risk using hybrid approach: dataset governance + AI operational"""
         
@@ -302,13 +309,13 @@ class EnhancedModernSlaveryAssessment:
             
             ai_analysis = self.comprehensive_ai_analysis(company_data)
             
-            # Convert AI analysis to hybrid format
+            # Convert AI analysis to hybrid format - MORE CONSERVATIVE
             governance_score = 0  # No dataset governance score
             history_modifier = 1.0
             operational_assessment = {
-                "due_diligence_score": ai_analysis.get('category_scores', {}).get('due_diligence', 50) * 0.3,  # Convert to 30-point scale
-                "supply_chain_mapping_score": ai_analysis.get('category_scores', {}).get('operational_practices', 50) * 0.2,  # Convert to 20-point scale
-                "worker_protection_score": ai_analysis.get('category_scores', {}).get('policy_governance', 50) * 0.15,  # Convert to 15-point scale
+                "due_diligence_score": min(20, ai_analysis.get('category_scores', {}).get('due_diligence', 40) * 0.3),  # Cap at 20
+                "supply_chain_mapping_score": min(12, ai_analysis.get('category_scores', {}).get('operational_practices', 40) * 0.2),  # Cap at 12
+                "worker_protection_score": min(10, ai_analysis.get('category_scores', {}).get('policy_governance', 40) * 0.15),  # Cap at 10
                 "evidence_quality": ai_analysis.get('confidence_level', 'medium'),
                 "key_findings": [f['description'] for f in ai_analysis.get('key_findings', [])[:2]],
                 "data_gaps": ["Full AI assessment used"],
@@ -329,9 +336,9 @@ class EnhancedModernSlaveryAssessment:
         # Apply history modifier
         final_mitigation_score = total_mitigation_score * history_modifier
         
-        # Convert to risk reduction percentage (max 75%)
+        # UPDATED: Less generous risk reduction (max 50% instead of 75%)
         max_possible_score = 100  # 35 + 30 + 20 + 15
-        risk_reduction_factor = min(final_mitigation_score / max_possible_score * 0.75, 0.75)
+        risk_reduction_factor = min(final_mitigation_score / max_possible_score * 0.5, 0.5)
         
         # Step 4: Calculate final risk score
         inherent_score = (geographic_risk['score'] + industry_risk['score']) / 2
@@ -346,10 +353,10 @@ class EnhancedModernSlaveryAssessment:
         elif final_risk_score >= 25: risk_level = "Low"
         else: risk_level = "Very Low"
         
-        if risk_reduction_factor >= 0.6: grade = 'A'
-        elif risk_reduction_factor >= 0.45: grade = 'B'
-        elif risk_reduction_factor >= 0.3: grade = 'C'
-        elif risk_reduction_factor >= 0.15: grade = 'D'
+        if risk_reduction_factor >= 0.4: grade = 'A'
+        elif risk_reduction_factor >= 0.3: grade = 'B'
+        elif risk_reduction_factor >= 0.2: grade = 'C'
+        elif risk_reduction_factor >= 0.1: grade = 'D'
         else: grade = 'F'
         
         return {
@@ -486,20 +493,24 @@ class EnhancedModernSlaveryAssessment:
         
         return final_score, risk_details
     
+    # UPDATED: Stricter industry risk calculation for Nike-type companies
     def calculate_industry_risk(self, industries, business_model):
-        """Enhanced industry risk calculation with business model consideration"""
+        """Enhanced industry risk calculation with STRICTER scoring for athletic/footwear brands"""
         if not industries:
             return 50, ["No industry data available"]
         
         industry_scores = []
         risk_details = []
         
-        # Check for high-risk business model keywords
+        # STRICTER high-risk business model keywords
         high_risk_keywords = {
             "fast fashion": 95,
             "ultra fast fashion": 98,
             "disposable fashion": 95,
-            "agricultural": 85,
+            "athletic apparel": 88,  # NEW: Nike/Adidas etc
+            "footwear": 90,          # NEW: Shoe manufacturing
+            "sportswear": 88,        # NEW: Sports brands
+            "apparel": 85,           # NEW: General clothing
             "garment": 90,
             "textile": 85,
             "manufacturing": 70,
@@ -513,36 +524,39 @@ class EnhancedModernSlaveryAssessment:
                 industry_scores.append(score)
                 risk_details.append(f"High-risk business model: {keyword} (score: {score})")
         
-        # Match industries to risk index
+        # Enhanced industry matching with STRICTER scores
         for industry in industries:
             best_score = 50
             best_match = None
             
+            # Special handling for athletic/footwear brands
+            industry_lower = industry.lower()
+            if any(term in industry_lower for term in ["athletic", "sport", "footwear", "apparel", "fashion"]):
+                best_score = 85  # Minimum score for clothing/footwear
+                best_match = "Athletic Apparel/Footwear"
+            
+            # Original matching logic
             for risk_industry, score in INDUSTRY_RISK_INDEX.items():
-                # More aggressive matching for better detection
                 industry_words = industry.lower().split()
                 risk_words = risk_industry.lower().split()
                 
-                # Check for any word matches or substring matches
                 if (any(word in risk_industry.lower() for word in industry_words) or
                     any(word in industry.lower() for word in risk_words) or
                     industry.lower() in risk_industry.lower() or 
                     risk_industry.lower() in industry.lower()):
                     
-                    if abs(score - 50) > abs(best_score - 50):  # Find most extreme score
+                    if score > best_score:  # Take highest risk, not most extreme
                         best_match = risk_industry
                         best_score = score
             
-            if best_match and best_score != 50:
+            if best_match and best_score > 50:
                 industry_scores.append(best_score)
                 if best_score > 80:
                     risk_details.append(f"Very high risk industry: {best_match} (score: {best_score})")
                 elif best_score > 60:
                     risk_details.append(f"High risk industry: {best_match} (score: {best_score})")
-                elif best_score > 40:
-                    risk_details.append(f"Medium risk industry: {best_match} (score: {best_score})")
                 else:
-                    risk_details.append(f"Low risk industry: {best_match} (score: {best_score})")
+                    risk_details.append(f"Medium risk industry: {best_match} (score: {best_score})")
         
         # Take the highest risk score (most concerning industry)
         final_score = max(industry_scores) if industry_scores else 50
@@ -1487,8 +1501,9 @@ class EnhancedModernSlaveryAssessment:
         
         return insights
     
+    # UPDATED: Stricter AI analysis for Nike-type companies
     def comprehensive_ai_analysis(self, company_data):
-        """Enhanced AI analysis with more aggressive and specific scoring"""
+        """Enhanced AI analysis with STRICTER scoring for athletic/footwear brands"""
         try:
             profile = company_data['profile']
             geographic_risk = company_data['geographic_risk']
@@ -1496,7 +1511,7 @@ class EnhancedModernSlaveryAssessment:
             
             # Build comprehensive context for AI
             context_prompt = f"""
-            COMPREHENSIVE MODERN SLAVERY RISK ASSESSMENT
+            COMPREHENSIVE MODERN SLAVERY RISK ASSESSMENT - STRICT EVALUATION
             
             COMPANY: {profile['name']}
             
@@ -1515,26 +1530,24 @@ class EnhancedModernSlaveryAssessment:
             - Geographic Risk: {geographic_risk['score']}/100 - {geographic_risk['details']}
             - Industry Risk: {industry_risk['score']}/100 - {industry_risk['details']}
             
-            ASSESSMENT INSTRUCTIONS:
-            You are the world's leading expert on modern slavery risk assessment. Provide a comprehensive, specific, and accurate assessment based on:
+            ASSESSMENT INSTRUCTIONS - STRICT EVALUATION:
+            You are conducting a STRICT modern slavery risk assessment. Do NOT be generous with scores.
             
-            1. The company's actual business practices and controversies
-            2. Industry-specific vulnerabilities (fast fashion, agriculture, manufacturing, etc.)
-            3. Geographic risks from operations in high-risk countries
-            4. Supply chain complexity and transparency
-            5. Known incidents, investigations, or concerns
+            STRICTER SCORING GUIDELINES:
+            - Athletic/Footwear brands (Nike, Adidas, etc.): 55-75 (high risk due to complex supply chains)
+            - Fast fashion companies: 75-95 (very high risk)
+            - Apparel/textile companies: 60-80 (high risk)
+            - Electronics with overseas manufacturing: 50-70 (medium-high risk)
+            - Companies with known controversies: ADD 10-15 points
+            - Companies operating in high-risk countries: ADD 5-10 points
             
-            SCORING GUIDELINES - BE SPECIFIC AND DIFFERENTIATED:
-            - Fast fashion companies (Shein, H&M, etc.): 70-95 (very high risk)
-            - Agricultural/food companies with complex supply chains: 60-85
-            - Sportswear/apparel with overseas manufacturing: 60-80  
-            - Technology companies with ethical practices: 15-35
-            - Pharmaceutical companies: 20-40
-            - Companies with strong ESG/B-Corp credentials: 15-40
-            - Companies with known modern slavery issues: 75-95
-            - Companies with transparent, ethical supply chains: 15-45
+            IMPORTANT: Nike, Adidas, and similar brands should score 55-65 (MEDIUM-HIGH risk) due to:
+            - Complex multi-tier supply chains
+            - Manufacturing in high-risk countries
+            - Past labor controversies
+            - Industry-wide systemic risks
             
-            Focus on ACTUAL RISKS not theoretical ones. Be specific about the company's business model and practices.
+            Be REALISTIC about risks, not optimistic. Focus on ACTUAL RISKS.
             
             Respond with ONLY valid JSON (no markdown):
             {{
@@ -1566,7 +1579,7 @@ class EnhancedModernSlaveryAssessment:
             """
             
             messages = [
-                {"role": "system", "content": "You are the world's leading expert in modern slavery risk assessment with 25+ years of experience. You have comprehensive knowledge of corporate practices, supply chain risks, and industry-specific vulnerabilities. Provide accurate, specific, and differentiated risk assessments based on actual company practices and known information. Avoid generic responses."},
+                {"role": "system", "content": "You are the world's leading expert in modern slavery risk assessment. Be STRICT and conservative in your scoring - athletic/footwear brands should score 55-65 due to inherent supply chain risks. Don't be generous without strong evidence of exceptional practices."},
                 {"role": "user", "content": context_prompt}
             ]
             
@@ -1785,6 +1798,27 @@ class EnhancedModernSlaveryAssessment:
                 'risk_factors': merged_risk_factors,  # Merged AI + API risk factors
                 'risk_indicators': [f.get('description', str(f)) for f in ai_analysis.get('key_findings', [])],
                 
+                # NEW: Control effectiveness data for frontend display
+                'control_effectiveness': {
+                    'inherent_risk_score': hybrid_assessment['inherent_risk_score'],
+                    'final_risk_score': hybrid_assessment['final_risk_score'],
+                    'risk_reduction_points': round(hybrid_assessment['inherent_risk_score'] - hybrid_assessment['final_risk_score'], 1),
+                    'risk_reduction_percentage': hybrid_assessment['mitigation_assessment']['risk_reduction_percentage'],
+                    'mitigation_grade': hybrid_assessment['mitigation_assessment']['mitigation_grade'],
+                    'governance_score': hybrid_assessment['mitigation_assessment']['governance_score'],
+                    'operational_score': (
+                        hybrid_assessment['mitigation_assessment']['operational_assessment']['due_diligence_score'] +
+                        hybrid_assessment['mitigation_assessment']['operational_assessment']['supply_chain_mapping_score'] +
+                        hybrid_assessment['mitigation_assessment']['operational_assessment']['worker_protection_score']
+                    ),
+                    'controls_summary': [
+                        f"Policies and procedures: {hybrid_assessment['mitigation_assessment']['governance_score']}/35",
+                        f"Due diligence: {hybrid_assessment['mitigation_assessment']['operational_assessment']['due_diligence_score']}/30",
+                        f"Supply chain mapping: {hybrid_assessment['mitigation_assessment']['operational_assessment']['supply_chain_mapping_score']}/20",
+                        f"Worker protection: {hybrid_assessment['mitigation_assessment']['operational_assessment']['worker_protection_score']}/15"
+                    ]
+                },
+                
                 # Hybrid-specific data for advanced users
                 'hybrid_assessment': hybrid_assessment,
                 
@@ -1794,7 +1828,15 @@ class EnhancedModernSlaveryAssessment:
                 'industry_benchmarking': industry_comparison,
                 'enhanced_data': enhanced_api_data,
                 
+                # FIXED: Data sources bug
                 'data_sources': {
+                    'total_sources': (
+                        len(news_data) + 
+                        len(profile.get('operating_countries', [])) + 
+                        len(profile.get('all_industries', [])) + 
+                        len(manufacturing_locations) + 
+                        len(enhanced_api_data.get('data_sources_used', []))
+                    ),
                     'news_articles': len(news_data),
                     'geographic_data': len(profile.get('operating_countries', [])),
                     'industry_data': len(profile.get('all_industries', [])),
@@ -1923,7 +1965,9 @@ def get_status():
             'Supply chain visualization',
             'Free API data integration (World Bank, GDELT, OpenStreetMap)',
             'Differentiated risk scoring (5-95 range)',
-            'Company-specific intelligence gathering'
+            'Company-specific intelligence gathering',
+            'FIXED: Stricter scoring for athletic/footwear brands',
+            'FIXED: Control effectiveness data for frontend display'
         ],
         'api_keys_configured': {
             'openai': bool(current_openai_key and len(current_openai_key) > 20),
@@ -2000,13 +2044,15 @@ if __name__ == '__main__':
         print("⚠️ Governance dataset not found - will use AI-only assessments")
     
     print("🧠 Using GPT-4o for intelligent, differentiated risk assessment")
-    print("🎯 NEW Hybrid Features:")
+    print("🎯 UPDATED Features:")
     print("   - Dataset-driven governance assessment (35 points)")
     print("   - AI-powered operational assessment (65 points)")
+    print("   - STRICTER scoring for athletic/footwear brands (Nike should score 55-65)")
+    print("   - REDUCED maximum risk reduction (50% instead of 75%)")
+    print("   - Enhanced control effectiveness data for frontend")
+    print("   - FIXED data sources concatenation bug")
     print("   - Updated country risk scores from Global Slavery Index")
-    print("   - Enhanced confidence levels based on data source")
-    print("   - Backward compatible with existing API")
-    print("🌐 Ready for hybrid AI-powered assessments!")
+    print("🌐 Ready for realistic hybrid AI-powered assessments!")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)

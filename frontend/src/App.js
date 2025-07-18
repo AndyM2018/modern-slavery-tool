@@ -31,7 +31,7 @@ const exportToExcel = (results, companyName) => {
     ['Overall Risk Level:', results.overall_risk_level || results.risk_level || 'Unknown'],
     ['Risk Score:', `${results.overall_risk_score || results.risk_score || 'N/A'}/100`],
     ['Manufacturing Sites:', results.manufacturing_locations ? results.manufacturing_locations.length : 0],
-    ['Data Sources:', results.data_sources ? Object.values(results.data_sources).reduce((a, b) => a + b, 0) : 0],
+    ['Data Sources:', results.data_sources ? (results.data_sources.total_sources || Object.values(results.data_sources).filter(v => typeof v === 'number').reduce((a, b) => a + b, 0)) : 0],
     [''],
     ['Key Findings:'],
   ];
@@ -973,24 +973,33 @@ function App() {
                 </div>
                 
                 <div className="risk-card">
-                  <h3>Risk Score</h3>
+                  <h3>Control Effectiveness</h3>
                   <div className="risk-score">
-                    {results.overall_risk_score || results.risk_score || 'N/A'}
-                    <span className="score-max">/100</span>
+                    {results.control_effectiveness ? 
+                      `${results.control_effectiveness.risk_reduction_percentage}%` : 
+                      'N/A'
+                    }
                   </div>
                 </div>
                 
                 <div className="risk-card">
-                  <h3>Manufacturing Sites</h3>
+                  <h3>Risk Reduction</h3>
                   <div className="risk-score">
-                    {results.manufacturing_locations ? results.manufacturing_locations.length : 0}
+                    {results.control_effectiveness ? 
+                      `-${results.control_effectiveness.risk_reduction_points}pts` : 
+                      'N/A'
+                    }
                   </div>
                 </div>
 
                 <div className="risk-card">
                   <h3>Data Sources</h3>
                   <div className="risk-score">
-                    {results.data_sources ? Object.values(results.data_sources).reduce((a, b) => a + b, 0) : 0}
+                    {results.data_sources ? 
+                      (results.data_sources.total_sources || 
+                       Object.values(results.data_sources).filter(v => typeof v === 'number').reduce((a, b) => a + b, 0)) : 
+                      0
+                    }
                   </div>
                 </div>
               </div>
@@ -1027,6 +1036,78 @@ function App() {
               <div className="tab-content">
                 {activeTab === 'overview' && (
                   <>
+                    {/* NEW: Control Effectiveness Section */}
+                    {results.control_effectiveness && (
+                      <div className="section">
+                        <h3>🛡️ Risk Assessment Overview</h3>
+                        
+                        <div className="control-effectiveness-display">
+                          <div className="inherent-risk-card">
+                            <h4>Inherent Risk</h4>
+                            <div className="risk-score-large">
+                              {results.control_effectiveness.inherent_risk_score}
+                            </div>
+                            <p>HIGH</p>
+                          </div>
+                          
+                          <div className="arrow-section">
+                            <div className="arrow">→</div>
+                            <div className="after-controls">
+                              <span>After Controls</span>
+                              <div className="risk-reduction-display">
+                                -{results.control_effectiveness.risk_reduction_points}pts
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="residual-risk-card">
+                            <h4>Residual Risk</h4>
+                            <div className="risk-score-large">
+                              {results.control_effectiveness.final_risk_score}
+                            </div>
+                            <p>{results.overall_risk_level ? results.overall_risk_level.toUpperCase() : 'MEDIUM'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="control-effectiveness-bar">
+                          <div className="control-label">🔧 Control Effectiveness</div>
+                          <div className="effectiveness-percentage">
+                            {results.control_effectiveness.risk_reduction_percentage}%
+                          </div>
+                          <div className="progress-bar-container">
+                            <div 
+                              className="progress-bar-fill"
+                              style={{ 
+                                width: `${results.control_effectiveness.risk_reduction_percentage}%`,
+                                backgroundColor: '#007bff'
+                              }}
+                            ></div>
+                          </div>
+                          <div className="control-summary">
+                            Controls have reduced risk by {results.control_effectiveness.risk_reduction_points} points ({results.control_effectiveness.risk_reduction_percentage}%)
+                          </div>
+                        </div>
+                        
+                        <div className="inherent-risk-factors">
+                          <h5>Inherent Risk Factors:</h5>
+                          <ul>
+                            <li>Industry and operational risks</li>
+                            <li>Geographic and supply chain exposure</li>
+                            <li>Natural business model vulnerabilities</li>
+                          </ul>
+                        </div>
+                        
+                        <div className="risk-controls">
+                          <h5>Risk Controls:</h5>
+                          <ul>
+                            <li>Policies and procedures</li>
+                            <li>Due diligence and monitoring</li>
+                            <li>Training and awareness programs</li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
                     {results.key_findings && results.key_findings.length > 0 && (
                       <div className="section">
                         <h3>🔍 Key Findings</h3>

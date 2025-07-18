@@ -1,4 +1,4 @@
-/* Complete App.css with all existing styles plus new improvements - FIXED */
+/* Complete App.css with all existing styles plus Control Effectiveness additions */
 
 /* Base App Styles */
 .App {
@@ -352,6 +352,149 @@
   color: #495057;
   font-size: 1.1em;
   font-weight: 600;
+}
+
+/* Control Effectiveness Display - NEW */
+.control-effectiveness-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  margin: 20px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+}
+
+.inherent-risk-card, .residual-risk-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid #e9ecef;
+  min-width: 140px;
+}
+
+.inherent-risk-card h4, .residual-risk-card h4 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.risk-score-large {
+  font-size: 2.5em;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 10px 0;
+}
+
+.inherent-risk-card p, .residual-risk-card p {
+  margin: 10px 0 0 0;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #6c757d;
+}
+
+.arrow-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.arrow {
+  font-size: 2em;
+  color: #667eea;
+  font-weight: 700;
+}
+
+.after-controls {
+  text-align: center;
+  font-size: 0.9em;
+  color: #495057;
+  font-weight: 500;
+}
+
+.risk-reduction-display {
+  color: #28a745;
+  font-weight: 700;
+  font-size: 1.1em;
+  margin-top: 4px;
+}
+
+.control-effectiveness-bar {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.control-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.effectiveness-percentage {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: #667eea;
+  margin-bottom: 10px;
+}
+
+.progress-bar-container {
+  background: #e9ecef;
+  border-radius: 10px;
+  height: 20px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+  border-radius: 10px;
+}
+
+.control-summary {
+  font-size: 0.9em;
+  color: #6c757d;
+  text-align: center;
+}
+
+.inherent-risk-factors, .risk-controls {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+  border-left: 4px solid #667eea;
+}
+
+.inherent-risk-factors h5, .risk-controls h5 {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.inherent-risk-factors ul, .risk-controls ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.inherent-risk-factors li, .risk-controls li {
+  margin-bottom: 5px;
+  color: #495057;
+  font-size: 0.9em;
 }
 
 /* Lists */
@@ -1213,6 +1356,33 @@ details pre {
   padding-bottom: 8px;
 }
 
+/* Circular Progress Spinner */
+.circular-progress-container {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+}
+
+.circular-progress {
+  transform: rotate(-90deg);
+}
+
+.progress-circle {
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+.progress-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+
 /* MOBILE RESPONSIVENESS IMPROVEMENTS */
 
 /* Tablet View (768px and below) */
@@ -1300,6 +1470,36 @@ details pre {
   
   .factor-header strong {
     min-width: auto;
+  }
+
+  /* Control Effectiveness mobile responsiveness */
+  .control-effectiveness-display {
+    flex-direction: column;
+    gap: 20px;
+    padding: 15px;
+  }
+
+  .arrow {
+    transform: rotate(90deg);
+    font-size: 1.5em;
+  }
+
+  .inherent-risk-card, .residual-risk-card {
+    min-width: auto;
+    width: 100%;
+    max-width: 250px;
+  }
+
+  .risk-score-large {
+    font-size: 2em;
+  }
+
+  .control-effectiveness-bar {
+    padding: 15px;
+  }
+
+  .effectiveness-percentage {
+    font-size: 1.3em;
   }
 
   /* IMPROVED: Industry Benchmarking Mobile Styles */
@@ -1402,6 +1602,29 @@ details pre {
     gap: 10px;
   }
 
+  /* Control Effectiveness mobile styles */
+  .control-effectiveness-display {
+    padding: 12px;
+    gap: 15px;
+  }
+
+  .inherent-risk-card, .residual-risk-card {
+    padding: 15px;
+    max-width: 200px;
+  }
+
+  .risk-score-large {
+    font-size: 1.8em;
+  }
+
+  .arrow {
+    font-size: 1.2em;
+  }
+
+  .inherent-risk-factors, .risk-controls {
+    padding: 12px;
+  }
+
   /* IMPROVED: Industry Benchmarking Mobile Styles */
   .industry-header-card {
     padding: 15px;
@@ -1497,6 +1720,16 @@ details pre {
   .performance-summary-card {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
+
+  .control-effectiveness-display {
+    flex-direction: row;
+    gap: 20px;
+  }
+
+  .arrow {
+    transform: none;
+    font-size: 2em;
+  }
 }
 
 /* High DPI display improvements */
@@ -1543,6 +1776,14 @@ details pre {
   }
 
   .vs-divider {
+    transform: none !important;
+  }
+
+  .control-effectiveness-display {
+    flex-direction: row !important;
+  }
+
+  .arrow {
     transform: none !important;
   }
 }
@@ -1660,7 +1901,21 @@ details pre {
   .insights-card h5 {
     color: #90cdf4;
   }
+
+  .control-effectiveness-display {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  }
+
+  .inherent-risk-card, .residual-risk-card {
+    background: #2d3748;
+    color: #e2e8f0;
+  }
+
+  .control-effectiveness-bar {
+    background: #2d3748;
+  }
 }
+
 /* MOBILE-ONLY FIXES - Won't affect desktop */
 
 /* Fix 1: Tab Navigation Overlapping */
@@ -1732,30 +1987,4 @@ details pre {
     height: 30px;
     font-size: 0.8em;
   }
-}
-/* Circular Progress Spinner */
-.circular-progress-container {
-  position: relative;
-  display: inline-block;
-  width: 32px;
-  height: 32px;
-}
-
-.circular-progress {
-  transform: rotate(-90deg);
-}
-
-.progress-circle {
-  transition: stroke-dashoffset 0.3s ease;
-}
-
-.progress-percentage {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 10px;
-  font-weight: 700;
-  color: white;
-  line-height: 1;
 }
