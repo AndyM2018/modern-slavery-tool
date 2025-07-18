@@ -1977,7 +1977,7 @@ def search_companies():
         {"name": f"{query} Inc.", "description": "Corporation", "industry": "Technology"},
         {"name": f"{query} Corporation", "description": "Large corporation", "industry": "Manufacturing"}
     ]
-    return jsonify({"companies": suggestions)
+    return jsonify({"companies": suggestions})
 
 if __name__ == '__main__':
     print("🚀 Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework Starting...")
