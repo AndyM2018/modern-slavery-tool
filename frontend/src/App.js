@@ -1036,10 +1036,10 @@ function App() {
               <div className="tab-content">
                 {activeTab === 'overview' && (
                   <>
-                    {/* NEW: Control Effectiveness Section */}
+                    {/* Control Effectiveness Section - UNCHANGED POSITION */}
                     {results.control_effectiveness && (
                       <div className="section">
-                        <h3>🛡️ Risk Assessment Overview</h3>
+                        <h3 className="risk-level-headline">🛡️ Risk Assessment Overview</h3>
                         
                         <div className="control-effectiveness-display">
                           <div className="inherent-risk-card">
@@ -1047,7 +1047,7 @@ function App() {
                             <div className="risk-score-large">
                               {results.control_effectiveness.inherent_risk_score}
                             </div>
-                            <p>HIGH</p>
+                            <p>{results.control_effectiveness.inherent_risk_level ? results.control_effectiveness.inherent_risk_level.toUpperCase() : 'HIGH'}</p>
                           </div>
                           
                           <div className="arrow-section">
@@ -1088,22 +1088,59 @@ function App() {
                           </div>
                         </div>
                         
-                        <div className="inherent-risk-factors">
-                          <h5>Inherent Risk Factors:</h5>
-                          <ul>
-                            <li>Industry and operational risks</li>
-                            <li>Geographic and supply chain exposure</li>
-                            <li>Natural business model vulnerabilities</li>
-                          </ul>
+                        <div className="risk-factors-and-controls-container">
+                          <div className="inherent-risk-factors">
+                            <h5>Inherent Risk Factors:</h5>
+                            <ul>
+                              <li>Industry and operational risks</li>
+                              <li>Geographic and supply chain exposure</li>
+                              <li>Natural business model vulnerabilities</li>
+                            </ul>
+                          </div>
+                          
+                          <div className="risk-controls">
+                            <h5>Risk Controls:</h5>
+                            <ul>
+                              <li>Policies and procedures</li>
+                              <li>Due diligence and monitoring</li>
+                              <li>Training and awareness programs</li>
+                            </ul>
+                          </div>
                         </div>
-                        
-                        <div className="risk-controls">
-                          <h5>Risk Controls:</h5>
-                          <ul>
-                            <li>Policies and procedures</li>
-                            <li>Due diligence and monitoring</li>
-                            <li>Training and awareness programs</li>
-                          </ul>
+                      </div>
+                    )}
+
+                    {/* NEW: Company Profile Section */}
+                    {results.company_profile && (
+                      <div className="section">
+                        <h3>🏢 Company Profile</h3>
+                        <div className="company-profile-grid">
+                          <div className="profile-item">
+                            <strong>Company Name:</strong>
+                            <span>{results.company_profile.name || results.company_name}</span>
+                          </div>
+                          <div className="profile-item">
+                            <strong>Industry:</strong>
+                            <span>{results.company_profile.primary_industry || 'Unknown'}</span>
+                          </div>
+                          <div className="profile-item">
+                            <strong>Headquarters:</strong>
+                            <span>{results.company_profile.headquarters || 'Unknown'}</span>
+                          </div>
+                          <div className="profile-item">
+                            <strong>Revenue:</strong>
+                            <span>{results.company_profile.revenue || 'Unknown'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* NEW: Modern Slavery Summary */}
+                    {results.modern_slavery_summary && (
+                      <div className="section">
+                        <h3>📋 Modern Slavery Risk Profile</h3>
+                        <div className="slavery-summary-content">
+                          <p>{results.modern_slavery_summary}</p>
                         </div>
                       </div>
                     )}

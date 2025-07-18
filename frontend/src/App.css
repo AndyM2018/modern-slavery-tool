@@ -1,4 +1,4 @@
-/* Complete App.css with all existing styles plus Control Effectiveness additions */
+/* Complete App.css with all existing styles plus new component additions */
 
 /* Base App Styles */
 .App {
@@ -354,7 +354,14 @@
   font-weight: 600;
 }
 
-/* Control Effectiveness Display - NEW */
+/* NEW: Bigger Risk Level Headline */
+.risk-level-headline {
+  font-size: 1.8em !important;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* Control Effectiveness Display */
 .control-effectiveness-display {
   display: flex;
   align-items: center;
@@ -471,11 +478,18 @@
   text-align: center;
 }
 
+/* NEW: Side-by-side Risk Factors and Controls Container */
+.risk-factors-and-controls-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 20px 0;
+}
+
 .inherent-risk-factors, .risk-controls {
   background: #f8f9fa;
   border-radius: 8px;
   padding: 15px;
-  margin: 15px 0;
   border-left: 4px solid #667eea;
 }
 
@@ -495,6 +509,53 @@
   margin-bottom: 5px;
   color: #495057;
   font-size: 0.9em;
+}
+
+/* NEW: Company Profile Section */
+.company-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.profile-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #667eea;
+}
+
+.profile-item strong {
+  color: #495057;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.profile-item span {
+  color: #2c3e50;
+  font-size: 1em;
+  font-weight: 500;
+}
+
+/* NEW: Modern Slavery Summary */
+.slavery-summary-content {
+  background: #e8f4fd;
+  border: 1px solid #b3d7f0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 15px;
+}
+
+.slavery-summary-content p {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.05em;
+  line-height: 1.6;
+  font-weight: 400;
 }
 
 /* Lists */
@@ -1472,6 +1533,21 @@ details pre {
     min-width: auto;
   }
 
+  /* NEW: Mobile responsiveness for new components */
+  .risk-factors-and-controls-container {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .company-profile-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .risk-level-headline {
+    font-size: 1.6em !important;
+  }
+
   /* Control Effectiveness mobile responsiveness */
   .control-effectiveness-display {
     flex-direction: column;
@@ -1600,6 +1676,23 @@ details pre {
 
   .legend-items {
     gap: 10px;
+  }
+
+  /* NEW: Mobile styles for new components */
+  .profile-item {
+    padding: 10px;
+  }
+  
+  .slavery-summary-content {
+    padding: 15px;
+  }
+  
+  .slavery-summary-content p {
+    font-size: 1em;
+  }
+  
+  .risk-level-headline {
+    font-size: 1.4em !important;
   }
 
   /* Control Effectiveness mobile styles */

@@ -40,19 +40,19 @@ OPENAI_API_KEY = api_keys['openai']
 SERPER_API_KEY = api_keys['serper']
 NEWS_API_KEY = api_keys['news']
 
-# UPDATED: Data-driven country risk scores from Global Slavery Index
+# UPDATED: Enhanced country risk scores
 COUNTRY_RISK_INDEX = {
     # Critical Risk (85-100) - Based on Global Slavery Index prevalence data
     "North Korea": 95, "Afghanistan": 96, "Eritrea": 90, "Mauritania": 87,
     "Myanmar": 88, "Iran": 85, "Saudi Arabia": 84,
     
     # Very High Risk (70-84)
-    "Pakistan": 83, "Turkey": 82, "Tajikistan": 80, "Bangladesh": 78,
-    "China": 78, "India": 76, "Cambodia": 75, "Nigeria": 74,
+    "Pakistan": 83, "Turkey": 85, "Tajikistan": 80, "Bangladesh": 78,
+    "China": 82, "India": 76, "Cambodia": 75, "Nigeria": 74,
     "Iraq": 72, "Thailand": 70,
     
     # High Risk (55-69)
-    "Vietnam": 68, "Philippines": 67, "Indonesia": 65, "Malaysia": 63,
+    "Vietnam": 72, "Philippines": 67, "Indonesia": 65, "Malaysia": 63,
     "Russia": 60, "Egypt": 58, "Mexico": 55,
     
     # Medium Risk (35-54)
@@ -67,7 +67,7 @@ COUNTRY_RISK_INDEX = {
     "Switzerland": 11, "Finland": 9, "New Zealand": 12, "Singapore": 20
 }
 
-# Keep existing industry risk scores
+# UPDATED: Enhanced industry risk scores
 INDUSTRY_RISK_INDEX = {
     "Fast Fashion": 98, "Textiles and Apparel": 95, "Garment Manufacturing": 96, 
     "Agriculture and Food": 92, "Electronics Manufacturing": 85, "Construction": 80, 
@@ -78,8 +78,8 @@ INDUSTRY_RISK_INDEX = {
     "Manufacturing": 75, "Automotive": 65, "Retail": 60, "E-commerce": 55,
     "Technology Services": 25, "Financial Services": 20, "Professional Services": 15, 
     "Healthcare": 30, "Education": 25, "Software": 20, "Pharmaceuticals": 25,
-    "Hospitality and Tourism": 50, "Food Processing": 70, "Beverages": 45,
-    "Consumer Goods": 55, "Luxury Goods": 70
+    "Hospitality and Tourism": 50, "Food Processing": 75, "Beverages": 45,
+    "Consumer Goods": 65, "Luxury Goods": 75
 }
 
 def clean_json_response(ai_response):
@@ -345,12 +345,11 @@ class EnhancedModernSlaveryAssessment:
         final_risk_score = inherent_score * (1 - risk_reduction_factor)
         final_risk_score = max(5, min(95, final_risk_score))
         
-        # Determine risk level and grade
-        if final_risk_score >= 85: risk_level = "Critical"
-        elif final_risk_score >= 70: risk_level = "Very High"
+        # UPDATED: Use new risk level thresholds
+        if final_risk_score >= 75: risk_level = "Very High"
         elif final_risk_score >= 55: risk_level = "High"
-        elif final_risk_score >= 40: risk_level = "Medium"
-        elif final_risk_score >= 25: risk_level = "Low"
+        elif final_risk_score >= 35: risk_level = "Medium"
+        elif final_risk_score >= 20: risk_level = "Low"
         else: risk_level = "Very Low"
         
         if risk_reduction_factor >= 0.4: grade = 'A'
@@ -363,6 +362,7 @@ class EnhancedModernSlaveryAssessment:
             'final_risk_score': round(final_risk_score, 1),
             'final_risk_level': risk_level,
             'inherent_risk_score': round(inherent_score, 1),
+            'inherent_risk_level': self.score_to_level(inherent_score),  # NEW: Add inherent risk level
             'mitigation_assessment': {
                 'governance_score': governance_score,
                 'operational_assessment': operational_assessment,
@@ -379,8 +379,9 @@ class EnhancedModernSlaveryAssessment:
             }
         }
 
+    # UPDATED: Enhanced company profile with revenue
     def get_company_profile(self, company_name):
-        """Enhanced company profile with AI intelligence"""
+        """Enhanced company profile with AI intelligence including revenue"""
         try:
             print(f"Building comprehensive profile for {company_name}...")
             
@@ -392,12 +393,13 @@ class EnhancedModernSlaveryAssessment:
                 REQUIRED ANALYSIS:
                 1. Headquarters country
                 2. Primary industry/business model
-                3. ALL countries where they have significant operations (manufacturing, sourcing, offices, suppliers)
-                4. ALL industry sectors and business lines they operate in
-                5. Employee count (approximate)
-                6. Business model and supply chain structure
-                7. Any known controversies, labor issues, or modern slavery concerns
-                8. Risk factors specific to their business model
+                3. Approximate annual revenue (in USD)
+                4. ALL countries where they have significant operations (manufacturing, sourcing, offices, suppliers)
+                5. ALL industry sectors and business lines they operate in
+                6. Employee count (approximate)
+                7. Business model and supply chain structure
+                8. Any known controversies, labor issues, or modern slavery concerns
+                9. Risk factors specific to their business model
                 
                 Be specific about:
                 - Manufacturing locations and supplier countries
@@ -409,6 +411,7 @@ class EnhancedModernSlaveryAssessment:
                 {{
                     "headquarters": "country name",
                     "primary_industry": "specific industry/business model",
+                    "revenue": "approximate annual revenue in USD (e.g., $50 billion, $2.5 billion, $500 million)",
                     "operating_countries": ["country1", "country2", "country3", "country4", "country5", "country6"],
                     "all_industries": ["industry1", "industry2", "industry3", "industry4"],
                     "employees": number_or_null,
@@ -420,7 +423,7 @@ class EnhancedModernSlaveryAssessment:
                 """}
             ]
             
-            ai_response = self.call_openai_api(messages, max_tokens=800, temperature=0.1)
+            ai_response = self.call_openai_api(messages, max_tokens=1000, temperature=0.1)
             
             if ai_response:
                 try:
@@ -438,6 +441,7 @@ class EnhancedModernSlaveryAssessment:
                 "name": company_name,
                 "headquarters": "Unknown",
                 "primary_industry": "Unknown", 
+                "revenue": "Unknown",
                 "operating_countries": [],
                 "all_industries": [],
                 "employees": None,
@@ -1501,6 +1505,57 @@ class EnhancedModernSlaveryAssessment:
         
         return insights
     
+    # NEW: Generate modern slavery summary
+    def generate_modern_slavery_summary(self, company_name, profile, hybrid_assessment, ai_analysis):
+        """Generate 2-3 sentence modern slavery profile summary"""
+        try:
+            # Build context for AI summary
+            context_prompt = f"""
+            Generate a concise 2-3 sentence modern slavery risk profile summary for {company_name}.
+            
+            Company Context:
+            - Industry: {profile.get('primary_industry', 'Unknown')}
+            - Headquarters: {profile.get('headquarters', 'Unknown')}
+            - Operating Countries: {profile.get('operating_countries', [])}
+            - Revenue: {profile.get('revenue', 'Unknown')}
+            
+            Risk Assessment Results:
+            - Inherent Risk Score: {hybrid_assessment['inherent_risk_score']} ({hybrid_assessment.get('inherent_risk_level', 'Unknown')})
+            - Final Risk Score: {hybrid_assessment['final_risk_score']} ({hybrid_assessment['final_risk_level']})
+            - Control Effectiveness: {hybrid_assessment['mitigation_assessment']['risk_reduction_percentage']}%
+            
+            Key Findings: {[f.get('description', '') for f in ai_analysis.get('key_findings', [])[:2]]}
+            
+            Create a professional, concise summary that:
+            1. States the overall risk level and key contributing factors
+            2. Mentions the most significant risk areas (geographic/industry)
+            3. Comments on control effectiveness or areas for improvement
+            
+            Keep it factual, professional, and under 100 words. Focus on the most important insights.
+            
+            Respond with ONLY the summary text, no formatting or labels.
+            """
+            
+            messages = [
+                {"role": "system", "content": "You are an expert in modern slavery risk assessment. Generate concise, professional risk profile summaries."},
+                {"role": "user", "content": context_prompt}
+            ]
+            
+            ai_response = self.call_openai_api(messages, max_tokens=200, temperature=0.1)
+            
+            if ai_response and ai_response.strip():
+                return ai_response.strip()
+            else:
+                # Fallback summary
+                risk_level = hybrid_assessment['final_risk_level'].lower()
+                industry = profile.get('primary_industry', 'this industry')
+                return f"{company_name} presents a {risk_level} modern slavery risk profile operating in {industry}. The company's risk assessment reflects both geographic and industry-specific factors. Enhanced due diligence and supply chain monitoring would strengthen their risk management approach."
+                
+        except Exception as e:
+            print(f"Error generating modern slavery summary: {e}")
+            # Simple fallback
+            return f"{company_name} has been assessed for modern slavery risks based on industry, geographic, and operational factors."
+    
     # UPDATED: Stricter AI analysis for Nike-type companies
     def comprehensive_ai_analysis(self, company_data):
         """Enhanced AI analysis with STRICTER scoring for athletic/footwear brands"""
@@ -1616,15 +1671,16 @@ class EnhancedModernSlaveryAssessment:
             print(f"Error in AI analysis: {e}")
             return self.generate_fallback_assessment(company_data)
     
+    # UPDATED: New risk level thresholds
     def score_to_level(self, score):
-        """Enhanced risk level distribution"""
+        """Enhanced risk level distribution with NEW thresholds"""
         if score >= 75:
             return "very-high"
-        elif score >= 60:
+        elif score >= 55:
             return "high"
-        elif score >= 45:
+        elif score >= 35:
             return "medium"
-        elif score >= 25:
+        elif score >= 20:
             return "low"
         else:
             return "very-low"
@@ -1675,13 +1731,13 @@ class EnhancedModernSlaveryAssessment:
     
     # FIXED: Main assessment function with complete AI analysis + hybrid scoring
     def assess_company(self, company_name):
-        """Main comprehensive assessment function with HYBRID approach - FIXED VERSION"""
+        """Main comprehensive assessment function with HYBRID approach - UPDATED VERSION"""
         try:
             print(f"Starting hybrid assessment for: {company_name}")
             
-            # Step 1: Build comprehensive company profile with AI
+            # Step 1: Build comprehensive company profile with AI (now includes revenue)
             profile = self.get_company_profile(company_name)
-            print(f"Profile: {profile.get('name')} - {profile.get('primary_industry')}")
+            print(f"Profile: {profile.get('name')} - {profile.get('primary_industry')} - Revenue: {profile.get('revenue', 'Unknown')}")
             
             # Step 2: Calculate enhanced geographic risk (using updated country scores)
             geo_risk_score, geo_details = self.calculate_geographic_risk(
@@ -1690,14 +1746,14 @@ class EnhancedModernSlaveryAssessment:
             )
             print(f"Geographic risk: {geo_risk_score}")
             
-            # Step 3: Calculate enhanced industry risk (unchanged)
+            # Step 3: Calculate enhanced industry risk (updated scores)
             industry_risk_score, industry_details = self.calculate_industry_risk(
                 profile.get('all_industries', []),
                 profile.get('business_model', '')
             )
             print(f"Industry risk: {industry_risk_score}")
             
-            # Step 4: Get manufacturing locations and map data (unchanged)
+            # Step 4: Get manufacturing locations and map data
             manufacturing_locations = self.get_manufacturing_locations(
                 company_name, 
                 profile.get('operating_countries', [])
@@ -1708,18 +1764,18 @@ class EnhancedModernSlaveryAssessment:
                 company_name
             )
             
-            # Step 5: Gather news data (unchanged)
+            # Step 5: Gather news data
             news_data = self.search_news_incidents(company_name)
             print(f"Found {len(news_data)} news articles")
             
-            # Step 6: Enhanced API data (unchanged)
+            # Step 6: Enhanced API data
             print("🚀 Getting enhanced API data...")
             enhanced_api_data = self.enhance_assessment_with_apis(
                 company_name,
                 profile.get('operating_countries', [])
             )
             
-            # Step 7: ALWAYS run comprehensive AI analysis first (FIXED)
+            # Step 7: ALWAYS run comprehensive AI analysis first
             geographic_risk = {'score': geo_risk_score, 'details': geo_details}
             industry_risk = {'score': industry_risk_score, 'details': industry_details}
             
@@ -1745,7 +1801,12 @@ class EnhancedModernSlaveryAssessment:
                 profile.get('primary_industry')
             )
             
-            # Step 10: Merge API risk factors with AI risk factors (FIXED)
+            # Step 10: Generate modern slavery summary
+            modern_slavery_summary = self.generate_modern_slavery_summary(
+                company_name, profile, hybrid_assessment, ai_analysis
+            )
+            
+            # Step 11: Merge API risk factors with AI risk factors
             merged_risk_factors = ai_analysis.get('risk_factors', [])
             if enhanced_api_data.get('api_risk_factors'):
                 # Convert API risk factors to match AI format
@@ -1756,7 +1817,7 @@ class EnhancedModernSlaveryAssessment:
                         'evidence': api_factor.get('evidence', '')
                     })
             
-            # Step 11: Format final response with COMPLETE data (FIXED)
+            # Step 12: Format final response with COMPLETE data
             final_assessment = {
                 'company_name': company_name,
                 'assessment_id': f"HYBRID_{int(time.time())}",
@@ -1766,6 +1827,9 @@ class EnhancedModernSlaveryAssessment:
                 'overall_risk_level': hybrid_assessment['final_risk_level'],
                 'overall_risk_score': hybrid_assessment['final_risk_score'],
                 'confidence_level': hybrid_assessment['assessment_metadata']['confidence_level'],
+                
+                # NEW: Modern slavery summary
+                'modern_slavery_summary': modern_slavery_summary,
                 
                 # Enhanced category breakdown - combine AI + hybrid data
                 'category_scores': {
@@ -1792,15 +1856,16 @@ class EnhancedModernSlaveryAssessment:
                     'details': industry_details
                 },
                 
-                # ✅ FIXED: Complete AI analysis content restored
+                # Complete AI analysis content
                 'key_findings': ai_analysis.get('key_findings', []),
                 'recommendations': ai_analysis.get('recommendations', []),
                 'risk_factors': merged_risk_factors,  # Merged AI + API risk factors
                 'risk_indicators': [f.get('description', str(f)) for f in ai_analysis.get('key_findings', [])],
                 
-                # NEW: Control effectiveness data for frontend display
+                # Control effectiveness data for frontend display
                 'control_effectiveness': {
                     'inherent_risk_score': hybrid_assessment['inherent_risk_score'],
+                    'inherent_risk_level': hybrid_assessment.get('inherent_risk_level', self.score_to_level(hybrid_assessment['inherent_risk_score'])),
                     'final_risk_score': hybrid_assessment['final_risk_score'],
                     'risk_reduction_points': round(hybrid_assessment['inherent_risk_score'] - hybrid_assessment['final_risk_score'], 1),
                     'risk_reduction_percentage': hybrid_assessment['mitigation_assessment']['risk_reduction_percentage'],
@@ -1852,11 +1917,10 @@ class EnhancedModernSlaveryAssessment:
             print(f"✅ Hybrid assessment completed for {company_name}")
             print(f"📊 Data source: {hybrid_assessment['assessment_metadata']['data_source']}")
             print(f"📊 Governance from dataset: {hybrid_assessment['assessment_metadata']['governance_from_dataset']}")
-            print(f"📊 Final risk score: {hybrid_assessment['final_risk_score']}")
+            print(f"📊 Final risk score: {hybrid_assessment['final_risk_score']} ({hybrid_assessment['final_risk_level']})")
+            print(f"📊 Inherent risk score: {hybrid_assessment['inherent_risk_score']} ({hybrid_assessment.get('inherent_risk_level', 'Unknown')})")
             print(f"📊 AI analysis quality: {ai_analysis.get('confidence_level', 'medium')}")
-            print(f"📊 Key findings: {len(ai_analysis.get('key_findings', []))}")
-            print(f"📊 Recommendations: {len(ai_analysis.get('recommendations', []))}")
-            print(f"📊 Risk factors: {len(merged_risk_factors)}")
+            print(f"📊 Modern slavery summary: {modern_slavery_summary[:50]}...")
             
             return final_assessment
             
@@ -1956,7 +2020,10 @@ def get_status():
         'features': [
             'GPT-4o powered intelligent analysis',
             'Hybrid assessment: Dataset governance + AI operational',
-            'Updated country risk scores from Global Slavery Index',
+            'UPDATED: Enhanced country and industry risk scores',
+            'UPDATED: New risk level thresholds (Very Low: 0-20, Low: 20-35, Medium: 35-55, High: 55-75, Very High: 75+)',
+            'UPDATED: Company profiles now include revenue data',
+            'NEW: Modern slavery summary generation',
             'Dynamic industry benchmarking with real data',
             'Global manufacturing mapping',
             'Enhanced geographic risk calculation',
@@ -2044,15 +2111,15 @@ if __name__ == '__main__':
         print("⚠️ Governance dataset not found - will use AI-only assessments")
     
     print("🧠 Using GPT-4o for intelligent, differentiated risk assessment")
-    print("🎯 UPDATED Features:")
-    print("   - Dataset-driven governance assessment (35 points)")
-    print("   - AI-powered operational assessment (65 points)")
-    print("   - STRICTER scoring for athletic/footwear brands (Nike should score 55-65)")
-    print("   - REDUCED maximum risk reduction (50% instead of 75%)")
-    print("   - Enhanced control effectiveness data for frontend")
-    print("   - FIXED data sources concatenation bug")
-    print("   - Updated country risk scores from Global Slavery Index")
-    print("🌐 Ready for realistic hybrid AI-powered assessments!")
+    print("🎯 NEW UPDATED Features:")
+    print("   - Enhanced country risk scores (China: 78→82, Vietnam: 68→72, Turkey: 82→85)")
+    print("   - Enhanced industry risk scores (Consumer Goods: 55→65, Food Processing: 70→75)")
+    print("   - NEW risk level thresholds (Very Low: 0-20, Low: 20-35, Medium: 35-55, High: 55-75, Very High: 75+)")
+    print("   - Company profiles now include revenue data (same AI call, no extra cost)")
+    print("   - Modern slavery summary generation (2-3 sentence profile)")
+    print("   - Consistent risk level framework for inherent and residual scores")
+    print("   - STRICTER scoring maintains realistic assessments")
+    print("🌐 Ready for enhanced hybrid AI-powered assessments!")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
