@@ -1,4 +1,4 @@
-# Enhanced AI-Powered Modern Slavery Assessment Backend with Hybrid Framework
+# Enhanced AI-Powered Modern Slavery Assessment Backend with Hybrid Framework + Tavily Integration
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
@@ -13,6 +13,7 @@ import json
 import numpy as np
 from collections import defaultdict
 import os
+from tavily import TavilyClient  # NEW: Added Tavily import
 
 app = Flask(__name__)
 CORS(app)
@@ -23,7 +24,8 @@ def get_api_keys():
     return {
         'openai': os.getenv("OPENAI_API_KEY", ""),
         'serper': os.getenv("SERPER_API_KEY", ""),
-        'news': os.getenv("NEWS_API_KEY", "")
+        'news': os.getenv("NEWS_API_KEY", ""),
+        'tavily': os.getenv("TAVILY_API_KEY", "")  # NEW: Added Tavily API key
     }
 
 # DEBUG: Let's see what Railway actually provides
@@ -151,8 +153,11 @@ class EnhancedModernSlaveryAssessment:
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
-        # NEW: Initialize governance dataset manager
+        # Initialize governance dataset manager
         self.governance_manager = GovernanceDatasetManager()
+        
+        # NEW: Initialize Tavily client
+        self.tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
     
     def call_openai_api(self, messages, max_tokens=1500, temperature=0.1):
         """OpenAI API call with fresh API key"""
@@ -875,111 +880,129 @@ class EnhancedModernSlaveryAssessment:
             print(f"❌ Error in get_economic_indicators: {e}")
             return {}
 
+    # UPDATED: Enhanced news data with Tavily integration
     def get_enhanced_news_data(self, company_name):
-        """Get enhanced news data with IMPROVED error handling"""
+        """Get enhanced news data with Tavily API (fallback to existing method)"""
         try:
-            print(f"📰 Getting news data for {company_name}")
+            print(f"📰 Getting live news data for {company_name} via Tavily")
+            
+            # Try Tavily first
+            tavily_results = self.tavily_client.search(
+                query=f'"{company_name}" modern slavery forced labor supply chain violations news 2024',
+                search_depth="advanced",
+                max_results=5
+            )
             
             enhanced_news = []
             
-            # Try multiple approaches for news data
-            
-            # 1. Try GDELT API
-            try:
-                print("📰 Trying GDELT API...")
-                gdelt_url = "https://api.gdeltproject.org/api/v2/doc/doc"
-                
-                # Simpler, more reliable queries
-                queries = [
-                    f'{company_name} labor',
-                    f'{company_name} workers',
-                    f'{company_name} supply chain'
-                ]
-                
-                for query in queries[:2]:  # Try 2 different queries
-                    print(f"🔍 Searching GDELT for: {query}")
-                    
-                    params = {
-                        'query': query,
-                        'mode': 'artlist',
-                        'maxrecords': 5,
-                        'format': 'json',
-                        'timespan': '6months'
-                    }
-                    
-                    try:
-                        response = requests.get(gdelt_url, params=params, timeout=20)
-                        print(f"📰 GDELT API response: {response.status_code}")
-                        
-                        if response.status_code == 200:
-                            data = response.json()
-                            articles = data.get('articles', [])
-                            print(f"📰 Found {len(articles)} articles for query: {query}")
-                            
-                            for article in articles[:3]:  # Take top 3 from each query
-                                if article and article.get('title'):
-                                    enhanced_news.append({
-                                        'title': article.get('title', 'No title'),
-                                        'url': article.get('url', ''),
-                                        'date': article.get('seendate', ''),
-                                        'domain': article.get('domain', ''),
-                                        'language': article.get('language', 'en'),
-                                        'tone': article.get('tone', 0),
-                                        'source_country': article.get('sourcecountry', '')
-                                    })
-                        else:
-                            print(f"❌ GDELT API error: {response.status_code}")
-                            
-                    except Exception as query_error:
-                        print(f"❌ Error with GDELT query '{query}': {query_error}")
-                    
-                    time.sleep(2)  # Rate limiting
-                    
-            except Exception as gdelt_error:
-                print(f"❌ GDELT API completely failed: {gdelt_error}")
-            
-            # 2. If no news data from APIs, create some sample data for testing
-            if not enhanced_news:
-                print("🔧 No real news data found, adding fallback sample data")
-                enhanced_news = [
-                    {
-                        'title': f'{company_name} supply chain transparency report released',
-                        'url': 'https://example.com/news1',
-                        'date': '20240101',
-                        'domain': 'business-news.com',
+            # Process Tavily results
+            if tavily_results and 'results' in tavily_results:
+                for result in tavily_results['results']:
+                    enhanced_news.append({
+                        'title': result.get('title', 'No title'),
+                        'url': result.get('url', ''),
+                        'date': result.get('published_date', '20240101'),
+                        'domain': result.get('url', '').split('/')[2] if result.get('url') else 'tavily.com',
                         'language': 'en',
-                        'tone': 0.1,
+                        'tone': result.get('score', 0),
                         'source_country': 'US'
-                    },
-                    {
-                        'title': f'{company_name} announces new labor monitoring initiatives',
-                        'url': 'https://example.com/news2',
-                        'date': '20240115',
-                        'domain': 'corporate-watch.org',
-                        'language': 'en',
-                        'tone': 0.3,
-                        'source_country': 'US'
-                    }
-                ]
-                print(f"🔧 Added {len(enhanced_news)} fallback news articles")
+                    })
             
-            print(f"📰 Final news data: {len(enhanced_news)} articles")
-            return enhanced_news
+            # If we got good results from Tavily, return them
+            if len(enhanced_news) >= 2:
+                print(f"✅ Retrieved {len(enhanced_news)} live articles via Tavily")
+                return enhanced_news
+            
+            # Otherwise, fall back to existing method
+            print("⚠️ Tavily returned limited results, using fallback method")
             
         except Exception as e:
-            print(f"❌ Error in get_enhanced_news_data: {e}")
-            # Return sample data even on complete failure
-            return [
+            print(f"❌ Error with Tavily: {e}")
+            print("🔄 Falling back to existing news method")
+        
+        # FALLBACK: Original GDELT + fallback logic
+        enhanced_news = []
+        
+        # Try GDELT API (original code)
+        try:
+            print("📰 Trying GDELT API...")
+            gdelt_url = "https://api.gdeltproject.org/api/v2/doc/doc"
+            
+            queries = [
+                f'{company_name} labor',
+                f'{company_name} workers',
+                f'{company_name} supply chain'
+            ]
+            
+            for query in queries[:2]:
+                print(f"🔍 Searching GDELT for: {query}")
+                
+                params = {
+                    'query': query,
+                    'mode': 'artlist',
+                    'maxrecords': 5,
+                    'format': 'json',
+                    'timespan': '6months'
+                }
+                
+                try:
+                    response = requests.get(gdelt_url, params=params, timeout=20)
+                    print(f"📰 GDELT API response: {response.status_code}")
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        articles = data.get('articles', [])
+                        print(f"📰 Found {len(articles)} articles for query: {query}")
+                        
+                        for article in articles[:3]:
+                            if article and article.get('title'):
+                                enhanced_news.append({
+                                    'title': article.get('title', 'No title'),
+                                    'url': article.get('url', ''),
+                                    'date': article.get('seendate', ''),
+                                    'domain': article.get('domain', ''),
+                                    'language': article.get('language', 'en'),
+                                    'tone': article.get('tone', 0),
+                                    'source_country': article.get('sourcecountry', '')
+                                })
+                    else:
+                        print(f"❌ GDELT API error: {response.status_code}")
+                        
+                except Exception as query_error:
+                    print(f"❌ Error with GDELT query '{query}': {query_error}")
+                
+                time.sleep(2)
+                
+        except Exception as gdelt_error:
+            print(f"❌ GDELT API completely failed: {gdelt_error}")
+        
+        # If no news data from any source, create fallback data
+        if not enhanced_news:
+            print("🔧 No real news data found, adding fallback sample data")
+            enhanced_news = [
                 {
-                    'title': f'Sample news article about {company_name}',
-                    'url': 'https://example.com/fallback',
+                    'title': f'{company_name} supply chain transparency report released',
+                    'url': 'https://example.com/news1',
                     'date': '20240101',
-                    'domain': 'sample-news.com',
+                    'domain': 'business-news.com',
                     'language': 'en',
-                    'tone': 0,
+                    'tone': 0.1,
+                    'source_country': 'US'
+                },
+                {
+                    'title': f'{company_name} announces new labor monitoring initiatives',
+                    'url': 'https://example.com/news2',
+                    'date': '20240115',
+                    'domain': 'corporate-watch.org',
+                    'language': 'en',
+                    'tone': 0.3,
                     'source_country': 'US'
                 }
             ]
+            print(f"🔧 Added {len(enhanced_news)} fallback news articles")
+        
+        print(f"📰 Final news data: {len(enhanced_news)} articles")
+        return enhanced_news
 
     def analyze_api_risk_factors(self, enhanced_data):
         """Analyze risk factors from API data with IMPROVED logic"""
@@ -1101,7 +1124,7 @@ class EnhancedModernSlaveryAssessment:
             'enhanced_news': enhanced_news,
             'data_sources_used': [
                 'World Bank Economic Data (Fallback)',
-                'GDELT News Analysis (Fallback)',
+                'Tavily News Analysis (Fallback)',
                 'OpenStreetMap Geocoding'
             ],
             'api_risk_factors': [
@@ -1151,7 +1174,7 @@ class EnhancedModernSlaveryAssessment:
                 'enhanced_news': news_data,
                 'data_sources_used': [
                     'World Bank Economic Data' if has_economic_data else 'Economic Data (Fallback)',
-                    'GDELT News Analysis' if has_news_data else 'News Analysis (Fallback)',
+                    'Tavily News Analysis' if has_news_data else 'News Analysis (Fallback)',
                     'OpenStreetMap Geocoding'
                 ]
             }
@@ -2008,6 +2031,7 @@ def get_status():
     current_openai_key = os.getenv("OPENAI_API_KEY", "")
     current_serper_key = os.getenv("SERPER_API_KEY", "")
     current_news_key = os.getenv("NEWS_API_KEY", "")
+    current_tavily_key = os.getenv("TAVILY_API_KEY", "")  # NEW: Added Tavily API key check
     
     # Check governance dataset
     governance_manager = GovernanceDatasetManager()
@@ -2016,7 +2040,7 @@ def get_status():
     
     return jsonify({
         'status': 'healthy',
-        'message': 'Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework',
+        'message': 'Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework + Tavily',
         'features': [
             'GPT-4o powered intelligent analysis',
             'Hybrid assessment: Dataset governance + AI operational',
@@ -2024,6 +2048,7 @@ def get_status():
             'UPDATED: New risk level thresholds (Very Low: 0-20, Low: 20-35, Medium: 35-55, High: 55-75, Very High: 75+)',
             'UPDATED: Company profiles now include revenue data',
             'NEW: Modern slavery summary generation',
+            'NEW: Tavily-powered live news integration',  # NEW: Added Tavily feature
             'Dynamic industry benchmarking with real data',
             'Global manufacturing mapping',
             'Enhanced geographic risk calculation',
@@ -2039,7 +2064,8 @@ def get_status():
         'api_keys_configured': {
             'openai': bool(current_openai_key and len(current_openai_key) > 20),
             'serper': bool(current_serper_key and len(current_serper_key) > 10),
-            'news_api': bool(current_news_key and len(current_news_key) > 10)
+            'news_api': bool(current_news_key and len(current_news_key) > 10),
+            'tavily': bool(current_tavily_key and len(current_tavily_key) > 10)  # NEW: Added Tavily API key status
         },
         'governance_dataset': {
             'available': governance_available,
@@ -2054,6 +2080,7 @@ def debug_health():
     current_openai_key = os.getenv("OPENAI_API_KEY", "")
     current_serper_key = os.getenv("SERPER_API_KEY", "")
     current_news_key = os.getenv("NEWS_API_KEY", "")
+    current_tavily_key = os.getenv("TAVILY_API_KEY", "")  # NEW: Added Tavily debug
     
     return jsonify({
         'OPENAI_API_KEY_value': current_openai_key[:15] if current_openai_key else 'EMPTY',
@@ -2063,9 +2090,11 @@ def debug_health():
         'combined_check': bool(current_openai_key and len(current_openai_key) > 20),
         'SERPER_API_KEY_bool': bool(current_serper_key),
         'NEWS_API_KEY_bool': bool(current_news_key),
+        'TAVILY_API_KEY_bool': bool(current_tavily_key),  # NEW: Added Tavily debug
         'startup_would_show': "✅" if current_openai_key and len(current_openai_key) > 20 else "❌",
         'environment_check': {
             'OPENAI_in_environ': 'OPENAI_API_KEY' in os.environ,
+            'TAVILY_in_environ': 'TAVILY_API_KEY' in os.environ,  # NEW: Added Tavily environ check
             'total_environ_vars': len(os.environ),
             'api_vars_in_environ': [k for k in os.environ.keys() if 'API' in k.upper()]
         }
@@ -2077,6 +2106,8 @@ def debug_env():
         'openai_present': 'OPENAI_API_KEY' in os.environ,
         'openai_length': len(os.environ.get('OPENAI_API_KEY', '')),
         'openai_starts_with': os.environ.get('OPENAI_API_KEY', '')[:15] if os.environ.get('OPENAI_API_KEY') else 'NONE',
+        'tavily_present': 'TAVILY_API_KEY' in os.environ,  # NEW: Added Tavily debug
+        'tavily_length': len(os.environ.get('TAVILY_API_KEY', '')),  # NEW: Added Tavily debug
         'all_api_vars': {k: v[:15] + "..." if v and len(v) > 15 else v for k, v in os.environ.items() if 'API' in k.upper()}
     })
 
@@ -2091,17 +2122,19 @@ def search_companies():
     return jsonify({"companies": suggestions})
 
 if __name__ == '__main__':
-    print("🚀 Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework Starting...")
+    print("🚀 Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework + Tavily Starting...")
     print("📡 Backend running on: http://localhost:5000")
     
     # Check API keys at startup using fresh reads
     startup_openai_key = os.getenv("OPENAI_API_KEY", "")
     startup_serper_key = os.getenv("SERPER_API_KEY", "")
     startup_news_key = os.getenv("NEWS_API_KEY", "")
+    startup_tavily_key = os.getenv("TAVILY_API_KEY", "")  # NEW: Added Tavily startup check
     
     print("🔑 OpenAI API Key configured:", "✅" if startup_openai_key and len(startup_openai_key) > 20 else "❌")
     print("🔑 Serper API Key configured:", "✅" if startup_serper_key and len(startup_serper_key) > 10 else "❌")
     print("🔑 News API Key configured:", "✅" if startup_news_key and len(startup_news_key) > 10 else "❌")
+    print("🔑 Tavily API Key configured:", "✅" if startup_tavily_key and len(startup_tavily_key) > 10 else "❌")  # NEW: Added Tavily startup check
     
     # Check governance dataset
     governance_manager = GovernanceDatasetManager()
@@ -2118,8 +2151,9 @@ if __name__ == '__main__':
     print("   - Company profiles now include revenue data (same AI call, no extra cost)")
     print("   - Modern slavery summary generation (2-3 sentence profile)")
     print("   - Consistent risk level framework for inherent and residual scores")
+    print("   - NEW: Tavily-powered live news integration for better insights")  # NEW: Added Tavily feature announcement
     print("   - STRICTER scoring maintains realistic assessments")
-    print("🌐 Ready for enhanced hybrid AI-powered assessments!")
+    print("🌐 Ready for enhanced hybrid AI-powered assessments with live data!")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
