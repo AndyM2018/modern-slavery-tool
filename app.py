@@ -880,98 +880,61 @@ class EnhancedModernSlaveryAssessment:
             print(f"❌ Error in get_economic_indicators: {e}")
             return {}
 
+    # UPDATED: Enhanced news data with Tavily integration
     def get_enhanced_news_data(self, company_name):
-        """Get enhanced news data with highly focused Tavily search for modern slavery content"""
+        """Get enhanced news data with Tavily API (fallback to existing method)"""
         try:
-            print(f"📰 Getting targeted modern slavery news for {company_name} via Tavily")
+            print(f"📰 Getting live news data for {company_name} via Tavily")
             
-            # Try Tavily with HIGHLY SPECIFIC modern slavery queries
+            # Try Tavily first
+            tavily_results = self.tavily_client.search(
+                query=f'"{company_name}" modern slavery forced labor supply chain violations news 2024',
+                search_depth="advanced",
+                max_results=5
+            )
+            
             enhanced_news = []
             
-            # UPDATED: Much more specific search queries focused on modern slavery
-            focused_queries = [
-                f'"{company_name}" "modern slavery statement" OR "modern slavery report" OR "responsible business" OR "supply chain transparency"',
-                f'"{company_name}" "forced labour" OR "forced labor" OR "human trafficking" OR "labour exploitation"',
-                f'"{company_name}" "modern slavery" OR "slavery audit" OR "supply chain due diligence" OR "worker rights"'
-            ]
+            # Process Tavily results
+            if tavily_results and 'results' in tavily_results:
+                for result in tavily_results['results']:
+                    enhanced_news.append({
+                        'title': result.get('title', 'No title'),
+                        'url': result.get('url', ''),
+                        'date': result.get('published_date', '20240101'),
+                        'domain': result.get('url', '').split('/')[2] if result.get('url') else 'tavily.com',
+                        'language': 'en',
+                        'tone': result.get('score', 0),
+                        'source_country': 'US'
+                    })
             
-            for query in focused_queries:
-                try:
-                    print(f"🔍 Tavily search: {query[:50]}...")
-                    
-                    tavily_results = self.tavily_client.search(
-                        query=query,
-                        search_depth="advanced",
-                        max_results=3,  # Fewer results but more focused
-                        include_domains=['gov.uk', 'business-humanrights.org', 'modernslaveryregistry.org'],  # Prioritize authoritative sources
-                        exclude_domains=['reddit.com', 'twitter.com', 'facebook.com', 'instagram.com']  # Exclude social media noise
-                    )
-                    
-                    # Process Tavily results with content filtering
-                    if tavily_results and 'results' in tavily_results:
-                        for result in tavily_results['results']:
-                            title = result.get('title', '').lower()
-                            content = result.get('content', '').lower()
-                            
-                            # UPDATED: Strict content filtering - only include if highly relevant
-                            modern_slavery_keywords = [
-                                'modern slavery', 'forced labour', 'forced labor', 'human trafficking',
-                                'labour exploitation', 'worker rights', 'supply chain transparency',
-                                'modern slavery statement', 'responsible business', 'due diligence',
-                                'slavery audit', 'worker protection', 'ethical sourcing',
-                                'labour standards', 'exploitation', 'trafficking'
-                            ]
-                            
-                            # Check if title or content contains specific modern slavery terms
-                            if any(keyword in title or keyword in content for keyword in modern_slavery_keywords):
-                                enhanced_news.append({
-                                    'title': result.get('title', 'No title'),
-                                    'url': result.get('url', ''),
-                                    'date': result.get('published_date', '20240101'),
-                                    'domain': result.get('url', '').split('/')[2] if result.get('url') else 'unknown',
-                                    'language': 'en',
-                                    'tone': result.get('score', 0),
-                                    'source_country': 'US',
-                                    'relevance_score': self.calculate_relevance_score(result.get('title', ''), result.get('content', ''))
-                                })
-                    
-                    # Brief pause between queries
-                    time.sleep(1)
-                    
-                except Exception as query_error:
-                    print(f"❌ Error with Tavily query: {query_error}")
-                    continue
-            
-            # Sort by relevance score (highest first)
-            enhanced_news.sort(key=lambda x: x.get('relevance_score', 0), reverse=True)
-            
-            # If we got good focused results from Tavily, return them
-            if len(enhanced_news) >= 1:  # Even 1 highly relevant article is better than generic news
-                print(f"✅ Retrieved {len(enhanced_news)} highly relevant modern slavery articles via Tavily")
-                return enhanced_news[:5]  # Top 5 most relevant
+            # If we got good results from Tavily, return them
+            if len(enhanced_news) >= 2:
+                print(f"✅ Retrieved {len(enhanced_news)} live articles via Tavily")
+                return enhanced_news
             
             # Otherwise, fall back to existing method
-            print("⚠️ Tavily returned no focused modern slavery results, using fallback method")
+            print("⚠️ Tavily returned limited results, using fallback method")
             
         except Exception as e:
-            print(f"❌ Error with focused Tavily search: {e}")
+            print(f"❌ Error with Tavily: {e}")
             print("🔄 Falling back to existing news method")
         
-        # FALLBACK: Original GDELT + fallback logic (keep existing code)
+        # FALLBACK: Original GDELT + fallback logic
         enhanced_news = []
         
-        # Try GDELT API with more focused queries
+        # Try GDELT API (original code)
         try:
-            print("📰 Trying GDELT API with focused modern slavery queries...")
+            print("📰 Trying GDELT API...")
             gdelt_url = "https://api.gdeltproject.org/api/v2/doc/doc"
             
-            # UPDATED: More focused GDELT queries
-            focused_gdelt_queries = [
-                f'"{company_name}" AND ("modern slavery" OR "forced labour" OR "worker exploitation")',
-                f'"{company_name}" AND ("supply chain transparency" OR "responsible business" OR "human rights")',
+            queries = [
+                f'{company_name} labor',
+                f'{company_name} workers',
+                f'{company_name} supply chain'
             ]
             
-            for query in focused_gdelt_queries[:1]:  # Just try one focused query
+            for query in queries[:2]:
                 print(f"🔍 Searching GDELT for: {query}")
                 
                 params = {
@@ -979,7 +942,7 @@ class EnhancedModernSlaveryAssessment:
                     'mode': 'artlist',
                     'maxrecords': 5,
                     'format': 'json',
-                    'timespan': '12months'  # Extended timespan for modern slavery reports
+                    'timespan': '6months'
                 }
                 
                 try:
@@ -989,90 +952,57 @@ class EnhancedModernSlaveryAssessment:
                     if response.status_code == 200:
                         data = response.json()
                         articles = data.get('articles', [])
-                        print(f"📰 Found {len(articles)} articles for focused query")
+                        print(f"📰 Found {len(articles)} articles for query: {query}")
                         
                         for article in articles[:3]:
                             if article and article.get('title'):
-                                # Filter GDELT results too
-                                title = article.get('title', '').lower()
-                                if any(keyword in title for keyword in ['modern slavery', 'forced labour', 'forced labor', 'worker rights', 'supply chain', 'human trafficking']):
-                                    enhanced_news.append({
-                                        'title': article.get('title', 'No title'),
-                                        'url': article.get('url', ''),
-                                        'date': article.get('seendate', ''),
-                                        'domain': article.get('domain', ''),
-                                        'language': article.get('language', 'en'),
-                                        'tone': article.get('tone', 0),
-                                        'source_country': article.get('sourcecountry', '')
-                                    })
+                                enhanced_news.append({
+                                    'title': article.get('title', 'No title'),
+                                    'url': article.get('url', ''),
+                                    'date': article.get('seendate', ''),
+                                    'domain': article.get('domain', ''),
+                                    'language': article.get('language', 'en'),
+                                    'tone': article.get('tone', 0),
+                                    'source_country': article.get('sourcecountry', '')
+                                })
                     else:
                         print(f"❌ GDELT API error: {response.status_code}")
                         
                 except Exception as query_error:
-                    print(f"❌ Error with GDELT query: {query_error}")
+                    print(f"❌ Error with GDELT query '{query}': {query_error}")
                 
                 time.sleep(2)
                 
         except Exception as gdelt_error:
             print(f"❌ GDELT API completely failed: {gdelt_error}")
         
-        # UPDATED: More relevant fallback data focused on modern slavery
+        # If no news data from any source, create fallback data
         if not enhanced_news:
-            print("🔧 No focused news data found, adding relevant fallback sample data")
+            print("🔧 No real news data found, adding fallback sample data")
             enhanced_news = [
                 {
-                    'title': f'{company_name} publishes annual Modern Slavery Statement',
-                    'url': 'https://example.com/modern-slavery-statement',
-                    'date': '20240201',
-                    'domain': 'corporate-responsibility.com',
+                    'title': f'{company_name} supply chain transparency report released',
+                    'url': 'https://example.com/news1',
+                    'date': '20240101',
+                    'domain': 'business-news.com',
                     'language': 'en',
-                    'tone': 0.2,
+                    'tone': 0.1,
                     'source_country': 'US'
                 },
                 {
-                    'title': f'{company_name} enhances supply chain due diligence for worker protection',
-                    'url': 'https://example.com/supply-chain-due-diligence',
+                    'title': f'{company_name} announces new labor monitoring initiatives',
+                    'url': 'https://example.com/news2',
                     'date': '20240115',
-                    'domain': 'business-human-rights.org',
+                    'domain': 'corporate-watch.org',
                     'language': 'en',
                     'tone': 0.3,
                     'source_country': 'US'
                 }
             ]
-            print(f"🔧 Added {len(enhanced_news)} relevant modern slavery fallback articles")
+            print(f"🔧 Added {len(enhanced_news)} fallback news articles")
         
-        print(f"📰 Final focused news data: {len(enhanced_news)} articles")
+        print(f"📰 Final news data: {len(enhanced_news)} articles")
         return enhanced_news
-
-    def calculate_relevance_score(self, title, content):
-        """Calculate relevance score for modern slavery content"""
-        score = 0
-        title_lower = (title or '').lower()
-        content_lower = (content or '').lower()
-        
-        # High-value terms (worth 3 points each)
-        high_value_terms = ['modern slavery statement', 'modern slavery report', 'responsible business report', 'supply chain transparency']
-        for term in high_value_terms:
-            if term in title_lower:
-                score += 3
-            elif term in content_lower:
-                score += 2
-        
-        # Medium-value terms (worth 2 points each)
-        medium_value_terms = ['modern slavery', 'forced labour', 'forced labor', 'human trafficking', 'worker exploitation']
-        for term in medium_value_terms:
-            if term in title_lower:
-                score += 2
-            elif term in content_lower:
-                score += 1
-        
-        # Low-value terms (worth 1 point each)
-        low_value_terms = ['worker rights', 'due diligence', 'supply chain', 'ethical sourcing', 'labour standards']
-        for term in low_value_terms:
-            if term in title_lower:
-                score += 1
-        
-        return score
 
     def analyze_api_risk_factors(self, enhanced_data):
         """Analyze risk factors from API data with IMPROVED logic"""
