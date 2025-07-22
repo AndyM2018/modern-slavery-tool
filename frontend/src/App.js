@@ -18,6 +18,28 @@ const capitalizeFirst = (str) => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
+// Helper function for date formatting
+const formatDate = (dateStr) => {
+  if (!dateStr) return 'Recent';
+  
+  try {
+    let date;
+    if (dateStr.length === 8) {
+      // Format: 20240101
+      date = new Date(dateStr.substring(0,4), dateStr.substring(4,6)-1, dateStr.substring(6,8));
+    } else {
+      date = new Date(dateStr);
+    }
+    
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (e) {
+    return dateStr;
+  }
+};
+
 // Export functionality
 const exportToExcel = (results, companyName) => {
   // Create workbook data
@@ -113,7 +135,7 @@ const exportToExcel = (results, companyName) => {
     workbookData.push({ name: 'Manufacturing Locations', data: locationData });
   }
 
-  // Enhanced Data Sheet
+  // Enhanced Data Sheet (UPDATED to include news data)
   if (results.enhanced_data) {
     const enhancedData = [
       ['Enhanced Data Analysis'],
@@ -127,6 +149,20 @@ const exportToExcel = (results, companyName) => {
           country,
           `GDP per capita: $${data.gdp_per_capita?.toLocaleString() || 'N/A'}`,
           `Economic risk: ${data.economic_risk_factor || 'N/A'}`
+        ]);
+      });
+    }
+
+    // NEW: Add news data to export
+    enhancedData.push([''], ['News Analysis:']);
+    if (results.enhanced_data.enhanced_news) {
+      results.enhanced_data.enhanced_news.forEach((article, index) => {
+        enhancedData.push([
+          `${index + 1}.`,
+          article.title || 'No title',
+          article.domain || 'Unknown source',
+          formatDate(article.date),
+          article.tone > 0.1 ? 'Positive' : article.tone < -0.1 ? 'Negative' : 'Neutral'
         ]);
       });
     }
@@ -605,7 +641,7 @@ const ManufacturingMap = ({ mapData, locations }) => {
   );
 };
 
-// UPDATED: Enhanced Data Sources Component
+// UPDATED: Enhanced Data Sources Component with LIVE Tavily News Display
 const EnhancedDataSources = ({ enhancedData }) => {
   // Debug logging to see what we're getting
   console.log("🔍 Enhanced Data Analysis:");
@@ -683,25 +719,141 @@ const EnhancedDataSources = ({ enhancedData }) => {
           )}
         </div>
 
-        {/* UPDATED: Enhanced News with "coming soon" message */}
+        {/* NEW: LIVE Tavily News Display - Replaces "coming soon" message */}
         <div className="data-source-item">
-          <h5>📰 Enhanced News Analysis</h5>
-          <div className="news-coming-soon">
-            <p style={{
-              color: '#666', 
-              fontStyle: 'italic',
-              textAlign: 'center',
-              padding: '20px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '4px',
-              border: '1px dashed #ddd'
-            }}>
-              📰 Enhanced news analysis coming soon
-            </p>
-            <small style={{color: '#999', fontSize: '0.8em', textAlign: 'center', display: 'block', marginTop: '8px'}}>
-              We're working on integrating premium news sources for more comprehensive labor rights coverage
-            </small>
-          </div>
+          <h5>📰 Live News Analysis</h5>
+          {hasNewsData ? (
+            <div className="news-data">
+              {/* News Summary Stats */}
+              <div className="news-stats" style={{ 
+                display: 'flex', 
+                justifyContent: 'space-around', 
+                marginBottom: '15px', 
+                padding: '10px', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '4px' 
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <strong style={{ color: '#007bff', fontSize: '1.2em' }}>{newsData.length}</strong>
+                  <div style={{ fontSize: '0.8em', color: '#666' }}>Articles</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <strong style={{ color: '#28a745', fontSize: '1.2em' }}>
+                    {newsData.filter(a => a.tone > 0.1).length}
+                  </strong>
+                  <div style={{ fontSize: '0.8em', color: '#666' }}>Positive</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <strong style={{ color: '#dc3545', fontSize: '1.2em' }}>
+                    {newsData.filter(a => a.tone < -0.1).length}
+                  </strong>
+                  <div style={{ fontSize: '0.8em', color: '#666' }}>Negative</div>
+                </div>
+              </div>
+
+              {/* Live News Articles */}
+              <div className="news-articles">
+                {newsData.slice(0, 3).map((article, index) => (
+                  <div key={index} className="news-article" style={{
+                    borderLeft: '3px solid #007bff',
+                    paddingLeft: '12px',
+                    marginBottom: '12px',
+                    paddingBottom: '8px'
+                  }}>
+                    <div style={{ fontSize: '0.9em', fontWeight: '500', marginBottom: '4px', lineHeight: '1.3' }}>
+                      {article.title}
+                    </div>
+                    <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '6px' }}>
+                      <span style={{ marginRight: '12px' }}>📍 {article.domain}</span>
+                      <span style={{ marginRight: '12px' }}>📅 {formatDate(article.date)}</span>
+                      {article.tone !== undefined && (
+                        <span className={`news-sentiment ${
+                          article.tone > 0.1 ? 'positive' : 
+                          article.tone < -0.1 ? 'negative' : 'neutral'
+                        }`} style={{
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          fontSize: '0.7em',
+                          backgroundColor: article.tone > 0.1 ? '#d4edda' : 
+                                          article.tone < -0.1 ? '#f8d7da' : '#e2e3e5',
+                          color: article.tone > 0.1 ? '#155724' : 
+                                article.tone < -0.1 ? '#721c24' : '#383d41'
+                        }}>
+                          {article.tone > 0.1 ? '📈 Positive' :
+                           article.tone < -0.1 ? '📉 Negative' : '➖ Neutral'}
+                        </span>
+                      )}
+                    </div>
+                    {article.url && article.url !== '' && !article.url.includes('example.com') && (
+                      <a 
+                        href={article.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ 
+                          fontSize: '0.8em', 
+                          color: '#007bff', 
+                          textDecoration: 'none'
+                        }}
+                        onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
+                        onMouseOut={(e) => e.target.style.textDecoration = 'none'}
+                      >
+                        🔗 Read full article
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Show more indicator */}
+              {newsData.length > 3 && (
+                <div style={{ 
+                  textAlign: 'center', 
+                  fontSize: '0.8em', 
+                  color: '#666', 
+                  fontStyle: 'italic',
+                  marginTop: '10px'
+                }}>
+                  +{newsData.length - 3} more articles found via Tavily
+                </div>
+              )}
+
+              {/* Data Source Badge */}
+              <div style={{ 
+                marginTop: '15px', 
+                textAlign: 'center'
+              }}>
+                <span style={{
+                  background: '#28a745',
+                  color: 'white',
+                  padding: '4px 8px',
+                  borderRadius: '12px',
+                  fontSize: '0.7em',
+                  fontWeight: '500'
+                }}>
+                  🔴 LIVE DATA
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="news-coming-soon">
+              <p style={{
+                color: '#666', 
+                fontStyle: 'italic',
+                textAlign: 'center',
+                padding: '20px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '4px',
+                border: '1px dashed #ddd'
+              }}>
+                📰 No recent news articles found
+              </p>
+              <small style={{color: '#999', fontSize: '0.8em', textAlign: 'center', display: 'block', marginTop: '8px'}}>
+                Debug: enhanced_news type = {typeof enhancedData.enhanced_news}, 
+                isArray = {Array.isArray(enhancedData.enhanced_news)}, 
+                length = {enhancedData.enhanced_news?.length || 0}
+              </small>
+            </div>
+          )}
         </div>
 
         {/* Data Sources */}
@@ -710,7 +862,19 @@ const EnhancedDataSources = ({ enhancedData }) => {
           {hasDataSources ? (
             <ul className="data-sources-list">
               {dataSources.map((source, index) => (
-                <li key={index}>{source}</li>
+                <li key={index} style={{ 
+                  marginBottom: '4px',
+                  fontSize: '0.9em'
+                }}>
+                  {/* Add special styling for Tavily */}
+                  {source.includes('Tavily') ? (
+                    <span style={{ fontWeight: '500', color: '#28a745' }}>
+                      ✨ {source}
+                    </span>
+                  ) : (
+                    source
+                  )}
+                </li>
               ))}
             </ul>
           ) : (
@@ -1274,7 +1438,7 @@ function App() {
                           <strong>Data Sources:</strong> {results.enhanced_data?.data_sources_used?.length || 0} external APIs
                         </div>
                         <div className="detail-item">
-                          <strong>News Articles:</strong> Enhanced analysis coming soon
+                          <strong>News Articles:</strong> {results.enhanced_data?.enhanced_news?.length || 0} live articles found
                         </div>
                         <div className="detail-item">
                           <strong>Economic Indicators:</strong> {Object.keys(results.enhanced_data?.economic_indicators || {}).length} countries
