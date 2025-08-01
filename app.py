@@ -190,7 +190,171 @@ class EnhancedModernSlaveryAssessment:
             print(f"Error calling OpenAI API: {e}")
             return None
     
-    # NEW: Hybrid assessment method
+    # NEW: Modern Slavery Statement Analysis Functions
+    def analyze_modern_slavery_statement_if_recent(self, company_name):
+        """Analyze recent Modern Slavery Statement for governance scoring (0-35 points)"""
+        try:
+            print(f"📋 Searching for recent Modern Slavery Statement for {company_name}")
+            
+            # Targeted search for Modern Slavery Statements
+            statement_queries = [
+                f'"{company_name}" AND "modern slavery statement"',
+                f'"{company_name}" AND "transparency report" AND "modern slavery"',
+                f'"{company_name}" AND "annual modern slavery" filetype:pdf'
+            ]
+            
+            for query in statement_queries:
+                try:
+                    print(f"🔍 Statement search: {query}")
+                    tavily_results = self.tavily_client.search(
+                        query=query,
+                        search_depth="advanced",
+                        max_results=3,
+                        include_raw_content=True
+                    )
+                    
+                    if tavily_results and 'results' in tavily_results:
+                        for result in tavily_results['results']:
+                            # Check if this looks like a Modern Slavery Statement
+                            title = result.get('title', '').lower()
+                            url = result.get('url', '').lower()
+                            content = result.get('content', '')
+                            
+                            statement_indicators = [
+                                'modern slavery statement', 'transparency report', 
+                                'modern slavery act', 'supply chain transparency',
+                                'slavery and human trafficking statement'
+                            ]
+                            
+                            is_statement = any(indicator in title or indicator in url for indicator in statement_indicators)
+                            
+                            if is_statement:
+                                # Check if the statement is recent (last 3 years: 2022-2025)
+                                publication_year = self.extract_publication_year(result, content)
+                                
+                                if publication_year and publication_year >= 2022:
+                                    print(f"✅ Found recent Modern Slavery Statement ({publication_year})")
+                                    # Analyze the statement content
+                                    governance_score = self.analyze_statement_content(content, company_name)
+                                    if governance_score > 0:
+                                        return governance_score
+                                else:
+                                    print(f"⚠️ Found Modern Slavery Statement but too old ({publication_year})")
+                    
+                    time.sleep(0.5)  # Rate limiting between queries
+                    
+                except Exception as query_error:
+                    print(f"❌ Error with statement query '{query}': {query_error}")
+            
+            print(f"📋 No recent Modern Slavery Statement found for {company_name}")
+            return 0
+            
+        except Exception as e:
+            print(f"❌ Error in statement analysis: {e}")
+            return 0
+
+    def extract_publication_year(self, result, content):
+        """Extract publication year from statement document"""
+        # Try to find year in title, URL, or content
+        text_to_search = f"{result.get('title', '')} {result.get('url', '')} {content[:500]}"
+        
+        # Look for patterns like "2024", "2023", etc.
+        year_patterns = [
+            r'\b(202[2-5])\b',  # 2022-2025
+            r'published[:\s]+.*?(202[2-5])',
+            r'dated[:\s]+.*?(202[2-5])',
+            r'(202[2-5])[:\s]*statement'
+        ]
+        
+        for pattern in year_patterns:
+            match = re.search(pattern, text_to_search, re.IGNORECASE)
+            if match:
+                year = int(match.group(1))
+                if 2022 <= year <= 2025:
+                    return year
+        
+        # If no explicit year found, assume current year for very recent results
+        return 2024
+
+    def analyze_statement_content(self, content, company_name):
+        """Analyze Modern Slavery Statement content against detailed criteria (0-35 points)"""
+        try:
+            if not content or len(content) < 100:
+                print("⚠️ Statement content too short for meaningful analysis")
+                return 0
+            
+            # Use AI to analyze statement against the same criteria as the dataset
+            analysis_prompt = f"""
+            Analyze this Modern Slavery Statement for {company_name} against detailed governance criteria.
+            
+            STATEMENT CONTENT:
+            {content[:3000]}
+            
+            Score against these EXACT criteria (same as governance dataset):
+            
+            1. POLICIES & PROCEDURES (0-15 points):
+               - Clear modern slavery policy (0-5)
+               - Supplier code of conduct (0-5) 
+               - Due diligence procedures (0-5)
+            
+            2. DUE DILIGENCE & MONITORING (0-10 points):
+               - Risk assessment process (0-3)
+               - Supplier auditing program (0-4)
+               - Supply chain mapping (0-3)
+            
+            3. TRAINING & AWARENESS (0-5 points):
+               - Staff training programs (0-3)
+               - Awareness initiatives (0-2)
+            
+            4. MONITORING & EFFECTIVENESS (0-5 points):
+               - KPIs and metrics (0-3)
+               - Regular reporting (0-2)
+            
+            Be REALISTIC - only award points for clearly stated practices, not generic commitments.
+            
+            Respond with ONLY valid JSON:
+            {{
+                "policies_procedures": integer_0_to_15,
+                "due_diligence_monitoring": integer_0_to_10,
+                "training_awareness": integer_0_to_5,
+                "monitoring_effectiveness": integer_0_to_5,
+                "total_score": integer_0_to_35,
+                "statement_quality": "high|medium|low",
+                "key_strengths": ["strength1", "strength2"],
+                "key_gaps": ["gap1", "gap2"],
+                "analysis_confidence": "high|medium|low"
+            }}
+            """
+            
+            messages = [
+                {"role": "system", "content": "You are an expert in Modern Slavery Act compliance and corporate governance assessment. Analyze statements against specific criteria with realistic scoring."},
+                {"role": "user", "content": analysis_prompt}
+            ]
+            
+            ai_response = self.call_openai_api(messages, max_tokens=800, temperature=0.1)
+            
+            if ai_response:
+                try:
+                    cleaned_response = clean_json_response(ai_response)
+                    analysis = json.loads(cleaned_response)
+                    
+                    total_score = analysis.get('total_score', 0)
+                    print(f"📋 Statement analysis complete: {total_score}/35 points")
+                    print(f"📋 Quality: {analysis.get('statement_quality', 'unknown')}")
+                    
+                    return min(35, max(0, total_score))  # Ensure within bounds
+                    
+                except json.JSONDecodeError as e:
+                    print(f"❌ Error parsing statement analysis: {e}")
+                    return 0
+            
+            return 0
+            
+        except Exception as e:
+            print(f"❌ Error analyzing statement content: {e}")
+            return 0
+    
+    # NEW: hybrid assessment method
     def assess_operational_mitigation_with_ai(self, company_name, company_profile):
         """Use AI to assess operational mitigation areas (65 points) - STRICTER SCORING"""
         try:
@@ -278,9 +442,9 @@ class EnhancedModernSlaveryAssessment:
                 "assessment_method": "fallback_operational"
             }
     
-    # UPDATED: Less generous risk reduction
+    # MODIFIED: Enhanced hybrid risk assessment with Modern Slavery Statement integration
     def calculate_hybrid_risk_assessment(self, company_name, profile, geographic_risk, industry_risk, enhanced_api_data):
-        """Calculate risk using hybrid approach: dataset governance + AI operational"""
+        """Calculate risk using hybrid approach: dataset governance + AI operational + Modern Slavery Statement analysis"""
         
         # Step 1: Check governance dataset
         governance_data = self.governance_manager.get_company_governance_score(company_name)
@@ -291,48 +455,49 @@ class EnhancedModernSlaveryAssessment:
             history_modifier = governance_data['History_Modifier']
             data_source = "hybrid_dataset_ai"
             confidence = "high"
-            
-            # Step 2: Use AI for operational assessment (65 points)
-            company_context = {
-                'name': company_name,
-                'headquarters': profile.get('headquarters'),
-                'countries': profile.get('operating_countries', []),
-                'industries': profile.get('all_industries', []),
-                'business_model': profile.get('business_model', '')
-            }
-            
-            operational_assessment = self.assess_operational_mitigation_with_ai(company_name, company_context)
+            statement_analysis = None
             
         else:
-            print(f"⚠️ {company_name} not found in governance dataset, using full AI assessment")
-            # Fall back to existing comprehensive AI analysis
-            company_data = {
-                'profile': profile,
-                'geographic_risk': geographic_risk,
-                'industry_risk': industry_risk
-            }
-            
-            ai_analysis = self.comprehensive_ai_analysis(company_data)
-            
-            # Convert AI analysis to hybrid format - MORE CONSERVATIVE
-            governance_score = 0  # No dataset governance score
+            print(f"⚠️ {company_name} not found in governance dataset, checking for Modern Slavery Statement")
             history_modifier = 1.0
-            operational_assessment = {
-                "due_diligence_score": min(20, ai_analysis.get('category_scores', {}).get('due_diligence', 40) * 0.3),  # Cap at 20
-                "supply_chain_mapping_score": min(12, ai_analysis.get('category_scores', {}).get('operational_practices', 40) * 0.2),  # Cap at 12
-                "worker_protection_score": min(10, ai_analysis.get('category_scores', {}).get('policy_governance', 40) * 0.15),  # Cap at 10
-                "evidence_quality": ai_analysis.get('confidence_level', 'medium'),
-                "key_findings": [f['description'] for f in ai_analysis.get('key_findings', [])[:2]],
-                "data_gaps": ["Full AI assessment used"],
-                "assessment_method": "full_ai_fallback"
-            }
             
-            data_source = "ai_only"
-            confidence = ai_analysis.get('confidence_level', 'medium')
+            # NEW: Try Modern Slavery Statement analysis
+            governance_score = self.analyze_modern_slavery_statement_if_recent(company_name)
+            
+            if governance_score > 0:
+                print(f"✅ Found recent Modern Slavery Statement, governance score: {governance_score}/35")
+                data_source = "hybrid_statement_ai"
+                confidence = "medium"
+                statement_analysis = {
+                    'found': True,
+                    'score': governance_score,
+                    'source': 'modern_slavery_statement'
+                }
+            else:
+                print(f"⚠️ No recent Modern Slavery Statement found, using full AI assessment")
+                governance_score = 0
+                data_source = "ai_only"
+                confidence = "medium"
+                statement_analysis = {
+                    'found': False,
+                    'score': 0,
+                    'source': 'none'
+                }
+        
+        # Step 2: Use AI for operational assessment (65 points)
+        company_context = {
+            'name': company_name,
+            'headquarters': profile.get('headquarters'),
+            'countries': profile.get('operating_countries', []),
+            'industries': profile.get('all_industries', []),
+            'business_model': profile.get('business_model', '')
+        }
+        
+        operational_assessment = self.assess_operational_mitigation_with_ai(company_name, company_context)
         
         # Step 3: Calculate total mitigation score
         total_mitigation_score = (
-            governance_score +  # 0-35 points from dataset or 0 if not found
+            governance_score +  # 0-35 points from dataset, statement analysis, or 0
             operational_assessment['due_diligence_score'] +  # 0-30 points from AI
             operational_assessment['supply_chain_mapping_score'] +  # 0-20 points from AI
             operational_assessment['worker_protection_score']  # 0-15 points from AI
@@ -367,19 +532,21 @@ class EnhancedModernSlaveryAssessment:
             'final_risk_score': round(final_risk_score, 1),
             'final_risk_level': risk_level,
             'inherent_risk_score': round(inherent_score, 1),
-            'inherent_risk_level': self.score_to_level(inherent_score),  # NEW: Add inherent risk level
+            'inherent_risk_level': self.score_to_level(inherent_score),
             'mitigation_assessment': {
                 'governance_score': governance_score,
                 'operational_assessment': operational_assessment,
                 'total_mitigation_score': round(final_mitigation_score, 1),
                 'risk_reduction_percentage': round(risk_reduction_factor * 100, 1),
                 'mitigation_grade': grade,
-                'history_modifier': history_modifier
+                'history_modifier': history_modifier,
+                'statement_analysis': statement_analysis  # NEW: Include statement analysis info
             },
             'assessment_metadata': {
                 'data_source': data_source,
                 'confidence_level': confidence,
                 'governance_from_dataset': governance_data is not None,
+                'governance_from_statement': statement_analysis is not None and statement_analysis.get('found', False),
                 'assessment_date': date.today().isoformat()
             }
         }
@@ -880,129 +1047,94 @@ class EnhancedModernSlaveryAssessment:
             print(f"❌ Error in get_economic_indicators: {e}")
             return {}
 
-    # UPDATED: Enhanced news data with Tavily integration
+    # MODIFIED: Enhanced news data with improved Tavily integration (quality over quantity)
     def get_enhanced_news_data(self, company_name):
-        """Get enhanced news data with Tavily API (fallback to existing method)"""
+        """Get enhanced news data with improved Tavily API (quality over quantity)"""
         try:
-            print(f"📰 Getting live news data for {company_name} via Tavily")
-            
-            # Try Tavily first
-            tavily_results = self.tavily_client.search(
-                query=f'"{company_name}" modern slavery forced labor supply chain violations news 2024',
-                search_depth="advanced",
-                max_results=5
-            )
+            print(f"📰 Getting focused news data for {company_name} via Tavily")
             
             enhanced_news = []
             
-            # Process Tavily results
-            if tavily_results and 'results' in tavily_results:
-                for result in tavily_results['results']:
-                    enhanced_news.append({
-                        'title': result.get('title', 'No title'),
-                        'url': result.get('url', ''),
-                        'date': result.get('published_date', '20240101'),
-                        'domain': result.get('url', '').split('/')[2] if result.get('url') else 'tavily.com',
-                        'language': 'en',
-                        'tone': result.get('score', 0),
-                        'source_country': 'US'
-                    })
+            # Targeted searches - BOTH company name AND modern slavery terms required
+            news_queries = [
+                f'"{company_name}" AND ("modern slavery" OR "forced labor") -wikipedia -definition',
+                f'"{company_name}" AND ("labor violations" OR "worker exploitation") -wikipedia'
+            ]
             
-            # If we got good results from Tavily, return them
-            if len(enhanced_news) >= 2:
-                print(f"✅ Retrieved {len(enhanced_news)} live articles via Tavily")
+            for query in news_queries:
+                try:
+                    print(f"🔍 News search: {query}")
+                    tavily_results = self.tavily_client.search(
+                        query=query,
+                        search_depth="advanced",
+                        max_results=2,  # Reduced from 5 - focus on quality
+                        include_answer=False,  # Don't need AI summary for news
+                        include_raw_content=False  # Don't need full content for news
+                    )
+                    
+                    if tavily_results and 'results' in tavily_results:
+                        for result in tavily_results['results']:
+                            # Quality filtering - check relevance
+                            title = result.get('title', '').lower()
+                            content = result.get('content', '').lower()
+                            url = result.get('url', '').lower()
+                            
+                            # Must contain BOTH company name AND modern slavery topics
+                            company_mentioned = company_name.lower() in title or company_name.lower() in content
+                            
+                            relevant_keywords = [
+                                'modern slavery', 'forced labor', 'human trafficking', 
+                                'labor violation', 'worker exploitation', 'supply chain audit',
+                                'labor investigation', 'worker rights', 'child labor'
+                            ]
+                            
+                            slavery_topic_mentioned = any(keyword in title or keyword in content for keyword in relevant_keywords)
+                            
+                            # Skip irrelevant content
+                            skip_keywords = [
+                                'wikipedia', 'definition of', 'what is modern slavery',
+                                'general information', 'historical context', 'academic research',
+                                'stock price', 'earnings report', 'financial results',
+                                'biography', 'company history', 'product launch'
+                            ]
+                            
+                            should_skip = any(skip_term in title or skip_term in content or skip_term in url for skip_term in skip_keywords)
+                            
+                            # Only include if genuinely relevant and not irrelevant
+                            if company_mentioned and slavery_topic_mentioned and not should_skip:
+                                enhanced_news.append({
+                                    'title': result.get('title', 'No title'),
+                                    'url': result.get('url', ''),
+                                    'date': result.get('published_date', '2024'),
+                                    'content_preview': result.get('content', '')[:200],  # Short preview
+                                    'domain': result.get('url', '').split('/')[2] if result.get('url') else 'unknown',
+                                    'language': 'en',
+                                    'relevance': 'high',  # Since we filtered for relevance
+                                    'source': 'tavily_filtered'
+                                })
+                                
+                                # Stop at 3 high-quality results total
+                                if len(enhanced_news) >= 3:
+                                    break
+                    
+                    time.sleep(0.5)  # Rate limiting
+                    
+                except Exception as query_error:
+                    print(f"❌ Error with news query '{query}': {query_error}")
+            
+            # If we found genuine results, return them
+            if enhanced_news:
+                print(f"✅ Found {len(enhanced_news)} relevant news articles via Tavily")
                 return enhanced_news
             
-            # Otherwise, fall back to existing method
-            print("⚠️ Tavily returned limited results, using fallback method")
+            # If no relevant results found, return empty with message
+            print(f"📰 No recent modern slavery-related news found for {company_name}")
+            return []
             
         except Exception as e:
-            print(f"❌ Error with Tavily: {e}")
-            print("🔄 Falling back to existing news method")
-        
-        # FALLBACK: Original GDELT + fallback logic
-        enhanced_news = []
-        
-        # Try GDELT API (original code)
-        try:
-            print("📰 Trying GDELT API...")
-            gdelt_url = "https://api.gdeltproject.org/api/v2/doc/doc"
-            
-            queries = [
-                f'{company_name} labor',
-                f'{company_name} workers',
-                f'{company_name} supply chain'
-            ]
-            
-            for query in queries[:2]:
-                print(f"🔍 Searching GDELT for: {query}")
-                
-                params = {
-                    'query': query,
-                    'mode': 'artlist',
-                    'maxrecords': 5,
-                    'format': 'json',
-                    'timespan': '6months'
-                }
-                
-                try:
-                    response = requests.get(gdelt_url, params=params, timeout=20)
-                    print(f"📰 GDELT API response: {response.status_code}")
-                    
-                    if response.status_code == 200:
-                        data = response.json()
-                        articles = data.get('articles', [])
-                        print(f"📰 Found {len(articles)} articles for query: {query}")
-                        
-                        for article in articles[:3]:
-                            if article and article.get('title'):
-                                enhanced_news.append({
-                                    'title': article.get('title', 'No title'),
-                                    'url': article.get('url', ''),
-                                    'date': article.get('seendate', ''),
-                                    'domain': article.get('domain', ''),
-                                    'language': article.get('language', 'en'),
-                                    'tone': article.get('tone', 0),
-                                    'source_country': article.get('sourcecountry', '')
-                                })
-                    else:
-                        print(f"❌ GDELT API error: {response.status_code}")
-                        
-                except Exception as query_error:
-                    print(f"❌ Error with GDELT query '{query}': {query_error}")
-                
-                time.sleep(2)
-                
-        except Exception as gdelt_error:
-            print(f"❌ GDELT API completely failed: {gdelt_error}")
-        
-        # If no news data from any source, create fallback data
-        if not enhanced_news:
-            print("🔧 No real news data found, adding fallback sample data")
-            enhanced_news = [
-                {
-                    'title': f'{company_name} supply chain transparency report released',
-                    'url': 'https://example.com/news1',
-                    'date': '20240101',
-                    'domain': 'business-news.com',
-                    'language': 'en',
-                    'tone': 0.1,
-                    'source_country': 'US'
-                },
-                {
-                    'title': f'{company_name} announces new labor monitoring initiatives',
-                    'url': 'https://example.com/news2',
-                    'date': '20240115',
-                    'domain': 'corporate-watch.org',
-                    'language': 'en',
-                    'tone': 0.3,
-                    'source_country': 'US'
-                }
-            ]
-            print(f"🔧 Added {len(enhanced_news)} fallback news articles")
-        
-        print(f"📰 Final news data: {len(enhanced_news)} articles")
-        return enhanced_news
+            print(f"❌ Error with Tavily news search: {e}")
+            print(f"📰 No recent modern slavery-related news available for {company_name}")
+            return []
 
     def analyze_api_risk_factors(self, enhanced_data):
         """Analyze risk factors from API data with IMPROVED logic"""
@@ -1931,6 +2063,7 @@ class EnhancedModernSlaveryAssessment:
                     'manufacturing_sites': len(manufacturing_locations),
                     'api_sources': len(enhanced_api_data.get('data_sources_used', [])),
                     'governance_dataset': hybrid_assessment['assessment_metadata']['governance_from_dataset'],
+                    'governance_from_statement': hybrid_assessment['assessment_metadata']['governance_from_statement'],
                     'ai_analysis_quality': ai_analysis.get('confidence_level', 'medium')
                 },
                 
@@ -1940,6 +2073,7 @@ class EnhancedModernSlaveryAssessment:
             print(f"✅ Hybrid assessment completed for {company_name}")
             print(f"📊 Data source: {hybrid_assessment['assessment_metadata']['data_source']}")
             print(f"📊 Governance from dataset: {hybrid_assessment['assessment_metadata']['governance_from_dataset']}")
+            print(f"📊 Governance from statement: {hybrid_assessment['assessment_metadata']['governance_from_statement']}")
             print(f"📊 Final risk score: {hybrid_assessment['final_risk_score']} ({hybrid_assessment['final_risk_level']})")
             print(f"📊 Inherent risk score: {hybrid_assessment['inherent_risk_score']} ({hybrid_assessment.get('inherent_risk_level', 'Unknown')})")
             print(f"📊 AI analysis quality: {ai_analysis.get('confidence_level', 'medium')}")
@@ -2031,7 +2165,7 @@ def get_status():
     current_openai_key = os.getenv("OPENAI_API_KEY", "")
     current_serper_key = os.getenv("SERPER_API_KEY", "")
     current_news_key = os.getenv("NEWS_API_KEY", "")
-    current_tavily_key = os.getenv("TAVILY_API_KEY", "")  # NEW: Added Tavily API key check
+    current_tavily_key = os.getenv("TAVILY_API_KEY", "")
     
     # Check governance dataset
     governance_manager = GovernanceDatasetManager()
@@ -2040,15 +2174,17 @@ def get_status():
     
     return jsonify({
         'status': 'healthy',
-        'message': 'Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework + Tavily',
+        'message': 'Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework + Improved Tavily Integration',
         'features': [
             'GPT-4o powered intelligent analysis',
-            'Hybrid assessment: Dataset governance + AI operational',
+            'Hybrid assessment: Dataset governance + AI operational + Modern Slavery Statement analysis',
             'UPDATED: Enhanced country and industry risk scores',
             'UPDATED: New risk level thresholds (Very Low: 0-20, Low: 20-35, Medium: 35-55, High: 55-75, Very High: 75+)',
             'UPDATED: Company profiles now include revenue data',
             'NEW: Modern slavery summary generation',
-            'NEW: Tavily-powered live news integration',  # NEW: Added Tavily feature
+            'NEW: Improved Tavily news integration with quality filtering',
+            'NEW: Modern Slavery Statement analysis for companies not in dataset',
+            'NEW: Statement recency validation (last 3 years only)',
             'Dynamic industry benchmarking with real data',
             'Global manufacturing mapping',
             'Enhanced geographic risk calculation',
@@ -2065,7 +2201,7 @@ def get_status():
             'openai': bool(current_openai_key and len(current_openai_key) > 20),
             'serper': bool(current_serper_key and len(current_serper_key) > 10),
             'news_api': bool(current_news_key and len(current_news_key) > 10),
-            'tavily': bool(current_tavily_key and len(current_tavily_key) > 10)  # NEW: Added Tavily API key status
+            'tavily': bool(current_tavily_key and len(current_tavily_key) > 10)
         },
         'governance_dataset': {
             'available': governance_available,
@@ -2080,7 +2216,7 @@ def debug_health():
     current_openai_key = os.getenv("OPENAI_API_KEY", "")
     current_serper_key = os.getenv("SERPER_API_KEY", "")
     current_news_key = os.getenv("NEWS_API_KEY", "")
-    current_tavily_key = os.getenv("TAVILY_API_KEY", "")  # NEW: Added Tavily debug
+    current_tavily_key = os.getenv("TAVILY_API_KEY", "")
     
     return jsonify({
         'OPENAI_API_KEY_value': current_openai_key[:15] if current_openai_key else 'EMPTY',
@@ -2090,11 +2226,11 @@ def debug_health():
         'combined_check': bool(current_openai_key and len(current_openai_key) > 20),
         'SERPER_API_KEY_bool': bool(current_serper_key),
         'NEWS_API_KEY_bool': bool(current_news_key),
-        'TAVILY_API_KEY_bool': bool(current_tavily_key),  # NEW: Added Tavily debug
+        'TAVILY_API_KEY_bool': bool(current_tavily_key),
         'startup_would_show': "✅" if current_openai_key and len(current_openai_key) > 20 else "❌",
         'environment_check': {
             'OPENAI_in_environ': 'OPENAI_API_KEY' in os.environ,
-            'TAVILY_in_environ': 'TAVILY_API_KEY' in os.environ,  # NEW: Added Tavily environ check
+            'TAVILY_in_environ': 'TAVILY_API_KEY' in os.environ,
             'total_environ_vars': len(os.environ),
             'api_vars_in_environ': [k for k in os.environ.keys() if 'API' in k.upper()]
         }
@@ -2106,8 +2242,8 @@ def debug_env():
         'openai_present': 'OPENAI_API_KEY' in os.environ,
         'openai_length': len(os.environ.get('OPENAI_API_KEY', '')),
         'openai_starts_with': os.environ.get('OPENAI_API_KEY', '')[:15] if os.environ.get('OPENAI_API_KEY') else 'NONE',
-        'tavily_present': 'TAVILY_API_KEY' in os.environ,  # NEW: Added Tavily debug
-        'tavily_length': len(os.environ.get('TAVILY_API_KEY', '')),  # NEW: Added Tavily debug
+        'tavily_present': 'TAVILY_API_KEY' in os.environ,
+        'tavily_length': len(os.environ.get('TAVILY_API_KEY', '')),
         'all_api_vars': {k: v[:15] + "..." if v and len(v) > 15 else v for k, v in os.environ.items() if 'API' in k.upper()}
     })
 
@@ -2122,19 +2258,19 @@ def search_companies():
     return jsonify({"companies": suggestions})
 
 if __name__ == '__main__':
-    print("🚀 Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework + Tavily Starting...")
+    print("🚀 Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework + Improved Tavily Integration Starting...")
     print("📡 Backend running on: http://localhost:5000")
     
     # Check API keys at startup using fresh reads
     startup_openai_key = os.getenv("OPENAI_API_KEY", "")
     startup_serper_key = os.getenv("SERPER_API_KEY", "")
     startup_news_key = os.getenv("NEWS_API_KEY", "")
-    startup_tavily_key = os.getenv("TAVILY_API_KEY", "")  # NEW: Added Tavily startup check
+    startup_tavily_key = os.getenv("TAVILY_API_KEY", "")
     
     print("🔑 OpenAI API Key configured:", "✅" if startup_openai_key and len(startup_openai_key) > 20 else "❌")
     print("🔑 Serper API Key configured:", "✅" if startup_serper_key and len(startup_serper_key) > 10 else "❌")
     print("🔑 News API Key configured:", "✅" if startup_news_key and len(startup_news_key) > 10 else "❌")
-    print("🔑 Tavily API Key configured:", "✅" if startup_tavily_key and len(startup_tavily_key) > 10 else "❌")  # NEW: Added Tavily startup check
+    print("🔑 Tavily API Key configured:", "✅" if startup_tavily_key and len(startup_tavily_key) > 10 else "❌")
     
     # Check governance dataset
     governance_manager = GovernanceDatasetManager()
@@ -2151,9 +2287,11 @@ if __name__ == '__main__':
     print("   - Company profiles now include revenue data (same AI call, no extra cost)")
     print("   - Modern slavery summary generation (2-3 sentence profile)")
     print("   - Consistent risk level framework for inherent and residual scores")
-    print("   - NEW: Tavily-powered live news integration for better insights")  # NEW: Added Tavily feature announcement
+    print("   - NEW: Improved Tavily news integration with quality filtering")
+    print("   - NEW: Modern Slavery Statement analysis for companies not in dataset")
+    print("   - NEW: Statement recency validation (last 3 years only)")
     print("   - STRICTER scoring maintains realistic assessments")
-    print("🌐 Ready for enhanced hybrid AI-powered assessments with live data!")
+    print("🌐 Ready for enhanced hybrid AI-powered assessments with improved live data!")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
