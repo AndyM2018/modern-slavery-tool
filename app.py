@@ -1,4 +1,4 @@
-# Enhanced AI-Powered Modern Slavery Assessment Backend with Hybrid Framework + Tavily Integration
+# Enhanced AI-Powered Modern Slavery Assessment Backend with Hybrid Framework + Tavily Integration - FIXED NEWS HANDLING
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
@@ -1047,9 +1047,9 @@ class EnhancedModernSlaveryAssessment:
             print(f"❌ Error in get_economic_indicators: {e}")
             return {}
 
-    # MODIFIED: Enhanced news data with improved Tavily integration (quality over quantity)
+    # FIXED: Enhanced news data with NO FAKE ARTICLES
     def get_enhanced_news_data(self, company_name):
-        """Get enhanced news data with improved Tavily API (quality over quantity)"""
+        """Get enhanced news data with improved Tavily API - REAL DATA ONLY"""
         try:
             print(f"📰 Getting focused news data for {company_name} via Tavily")
             
@@ -1067,9 +1067,9 @@ class EnhancedModernSlaveryAssessment:
                     tavily_results = self.tavily_client.search(
                         query=query,
                         search_depth="advanced",
-                        max_results=2,  # Reduced from 5 - focus on quality
-                        include_answer=False,  # Don't need AI summary for news
-                        include_raw_content=False  # Don't need full content for news
+                        max_results=2,
+                        include_answer=False,
+                        include_raw_content=False
                     )
                     
                     if tavily_results and 'results' in tavily_results:
@@ -1106,11 +1106,11 @@ class EnhancedModernSlaveryAssessment:
                                     'title': result.get('title', 'No title'),
                                     'url': result.get('url', ''),
                                     'date': result.get('published_date', '2024'),
-                                    'content_preview': result.get('content', '')[:200],  # Short preview
+                                    'content_preview': result.get('content', '')[:200],
                                     'domain': result.get('url', '').split('/')[2] if result.get('url') else 'unknown',
                                     'language': 'en',
-                                    'relevance': 'high',  # Since we filtered for relevance
-                                    'source': 'tavily_filtered'
+                                    'relevance': 'high',
+                                    'source': 'tavily_real'  # MARK AS REAL DATA
                                 })
                                 
                                 # Stop at 3 high-quality results total
@@ -1122,19 +1122,18 @@ class EnhancedModernSlaveryAssessment:
                 except Exception as query_error:
                     print(f"❌ Error with news query '{query}': {query_error}")
             
-            # If we found genuine results, return them
+            # FIXED: If no real results found, return empty array with clear message
             if enhanced_news:
-                print(f"✅ Found {len(enhanced_news)} relevant news articles via Tavily")
+                print(f"✅ Found {len(enhanced_news)} REAL news articles via Tavily")
                 return enhanced_news
-            
-            # If no relevant results found, return empty with message
-            print(f"📰 No recent modern slavery-related news found for {company_name}")
-            return []
-            
+            else:
+                print(f"📰 No recent modern slavery-related news found for {company_name}")
+                return []  # RETURN EMPTY - NO FAKE DATA
+                
         except Exception as e:
             print(f"❌ Error with Tavily news search: {e}")
             print(f"📰 No recent modern slavery-related news available for {company_name}")
-            return []
+            return []  # RETURN EMPTY - NO FAKE DATA
 
     def analyze_api_risk_factors(self, enhanced_data):
         """Analyze risk factors from API data with IMPROVED logic"""
@@ -1187,7 +1186,7 @@ class EnhancedModernSlaveryAssessment:
         return risk_factors
 
     def get_fallback_enhanced_data(self, company_name, operating_countries):
-        """Provide comprehensive fallback data for testing when APIs fail"""
+        """Provide comprehensive fallback data for testing when APIs fail - NO FAKE NEWS"""
         print(f"🔧 Using fallback enhanced data for {company_name}")
         
         # Create realistic economic data based on operating countries
@@ -1220,62 +1219,33 @@ class EnhancedModernSlaveryAssessment:
                 }
             }
         
-        # Create realistic news data
-        enhanced_news = [
-            {
-                'title': f'{company_name} publishes annual sustainability report',
-                'url': f'https://example.com/{company_name.lower().replace(" ", "-")}-sustainability',
-                'date': '20240201',
-                'domain': 'corporate-sustainability.com',
-                'tone': 0.2,
-                'source_country': 'US',
-                'language': 'en'
-            },
-            {
-                'title': f'{company_name} supply chain audit reveals improvement areas',
-                'url': f'https://example.com/{company_name.lower().replace(" ", "-")}-audit',
-                'date': '20240115',
-                'domain': 'supply-chain-watch.org',
-                'tone': -0.1,
-                'source_country': 'US',
-                'language': 'en'
-            },
-            {
-                'title': f'{company_name} commits to enhanced worker protection measures',
-                'url': f'https://example.com/{company_name.lower().replace(" ", "-")}-worker-protection',
-                'date': '20240301',
-                'domain': 'labor-rights-news.com',
-                'tone': 0.4,
-                'source_country': 'US',
-                'language': 'en'
-            }
-        ]
+        # FIXED: NO MORE FAKE NEWS - return empty array
+        enhanced_news = []  # NO FAKE ARTICLES
         
         return {
             'economic_indicators': economic_indicators,
-            'enhanced_news': enhanced_news,
+            'enhanced_news': enhanced_news,  # EMPTY ARRAY
             'data_sources_used': [
                 'World Bank Economic Data (Fallback)',
-                'Tavily News Analysis (Fallback)',
-                'OpenStreetMap Geocoding'
+                'No recent news data available'  # HONEST MESSAGE
             ],
             'api_risk_factors': [
                 {
-                    'factor': 'Limited real-time API data available',
+                    'factor': 'Limited real-time news data available',
                     'impact': 'low',
-                    'evidence': 'Using comprehensive fallback data for analysis. Real-time API integration may have rate limits.'
+                    'evidence': 'No recent modern slavery-related news articles found for this company.'
                 }
             ]
         }
 
     def enhance_assessment_with_apis(self, company_name, operating_countries):
-        """ENHANCED assessment with better fallback handling and guaranteed data"""
+        """ENHANCED assessment with better fallback handling and NO FAKE NEWS"""
         try:
             print(f"🚀 Enhancing assessment for {company_name} with API data...")
             
             # Always try to get real data first
             economic_data = self.get_economic_indicators(operating_countries)
-            news_data = self.get_enhanced_news_data(company_name)
+            news_data = self.get_enhanced_news_data(company_name)  # This now returns empty array if no real data
             
             # Check if we got meaningful real data
             has_economic_data = bool(economic_data and len(economic_data) > 0)
@@ -1284,31 +1254,33 @@ class EnhancedModernSlaveryAssessment:
             print(f"📊 Real economic data: {has_economic_data} ({len(economic_data)} countries)")
             print(f"📰 Real news data: {has_news_data} ({len(news_data)} articles)")
             
-            # If we have some real data, use it; otherwise use fallback
-            if not has_economic_data and not has_news_data:
-                print("⚠️ No real API data available, using comprehensive fallback")
-                return self.get_fallback_enhanced_data(company_name, operating_countries)
-            
-            # If we have partial data, supplement with fallback
+            # FIXED: Only supplement economic data, keep news empty if no real data
             if not has_economic_data:
                 print("📊 Supplementing with fallback economic data")
                 fallback_data = self.get_fallback_enhanced_data(company_name, operating_countries)
                 economic_data = fallback_data['economic_indicators']
             
-            if not has_news_data:
-                print("📰 Supplementing with fallback news data")
-                fallback_data = self.get_fallback_enhanced_data(company_name, operating_countries)
-                news_data = fallback_data['enhanced_news']
+            # FIXED: Don't supplement news with fake data - keep it empty
+            # news_data is already empty array if no real data found
             
             # Create comprehensive enhanced data structure
+            data_sources = []
+            if has_economic_data:
+                data_sources.append('World Bank Economic Data')
+            else:
+                data_sources.append('Economic Data (Fallback)')
+                
+            if has_news_data:
+                data_sources.append('Tavily News Analysis')
+            else:
+                data_sources.append('No recent news data found')
+            
+            data_sources.append('OpenStreetMap Geocoding')
+            
             enhanced_data = {
                 'economic_indicators': economic_data,
-                'enhanced_news': news_data,
-                'data_sources_used': [
-                    'World Bank Economic Data' if has_economic_data else 'Economic Data (Fallback)',
-                    'Tavily News Analysis' if has_news_data else 'News Analysis (Fallback)',
-                    'OpenStreetMap Geocoding'
-                ]
+                'enhanced_news': news_data,  # Real data only or empty array
+                'data_sources_used': data_sources
             }
             
             # Generate risk factors from the data
@@ -1317,7 +1289,7 @@ class EnhancedModernSlaveryAssessment:
             
             print(f"✅ Enhanced data ready: {len(economic_data)} countries, {len(news_data)} articles, {len(api_risk_factors)} risk factors")
             print(f"📊 Economic countries: {list(economic_data.keys())}")
-            print(f"📰 News articles count: {len(news_data)}")
+            print(f"📰 News articles count: {len(news_data)} (REAL ARTICLES ONLY)")
             
             return enhanced_data
             
@@ -2174,7 +2146,7 @@ def get_status():
     
     return jsonify({
         'status': 'healthy',
-        'message': 'Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework + Improved Tavily Integration',
+        'message': 'Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework + FIXED News Handling',
         'features': [
             'GPT-4o powered intelligent analysis',
             'Hybrid assessment: Dataset governance + AI operational + Modern Slavery Statement analysis',
@@ -2182,7 +2154,8 @@ def get_status():
             'UPDATED: New risk level thresholds (Very Low: 0-20, Low: 20-35, Medium: 35-55, High: 55-75, Very High: 75+)',
             'UPDATED: Company profiles now include revenue data',
             'NEW: Modern slavery summary generation',
-            'NEW: Improved Tavily news integration with quality filtering',
+            'FIXED: No more fake news articles - real data only or empty results',
+            'FIXED: Honest messaging when no news data is available',
             'NEW: Modern Slavery Statement analysis for companies not in dataset',
             'NEW: Statement recency validation (last 3 years only)',
             'Dynamic industry benchmarking with real data',
@@ -2258,7 +2231,7 @@ def search_companies():
     return jsonify({"companies": suggestions})
 
 if __name__ == '__main__':
-    print("🚀 Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework + Improved Tavily Integration Starting...")
+    print("🚀 Enhanced AI-Powered Modern Slavery Assessment API with Hybrid Framework + FIXED News Handling Starting...")
     print("📡 Backend running on: http://localhost:5000")
     
     # Check API keys at startup using fresh reads
@@ -2280,18 +2253,21 @@ if __name__ == '__main__':
         print("⚠️ Governance dataset not found - will use AI-only assessments")
     
     print("🧠 Using GPT-4o for intelligent, differentiated risk assessment")
-    print("🎯 NEW UPDATED Features:")
+    print("🎯 FIXED News Handling:")
+    print("   ✅ NO MORE FAKE NEWS ARTICLES - real data only")
+    print("   ✅ Empty arrays returned when no real news found")
+    print("   ✅ Honest messaging about data availability")
+    print("   ✅ Clear labeling of real vs fallback data")
+    print("🎯 Other Features:")
     print("   - Enhanced country risk scores (China: 78→82, Vietnam: 68→72, Turkey: 82→85)")
     print("   - Enhanced industry risk scores (Consumer Goods: 55→65, Food Processing: 70→75)")
     print("   - NEW risk level thresholds (Very Low: 0-20, Low: 20-35, Medium: 35-55, High: 55-75, Very High: 75+)")
-    print("   - Company profiles now include revenue data (same AI call, no extra cost)")
+    print("   - Company profiles now include revenue data")
     print("   - Modern slavery summary generation (2-3 sentence profile)")
-    print("   - Consistent risk level framework for inherent and residual scores")
-    print("   - NEW: Improved Tavily news integration with quality filtering")
-    print("   - NEW: Modern Slavery Statement analysis for companies not in dataset")
-    print("   - NEW: Statement recency validation (last 3 years only)")
+    print("   - Modern Slavery Statement analysis for companies not in dataset")
+    print("   - Statement recency validation (last 3 years only)")
     print("   - STRICTER scoring maintains realistic assessments")
-    print("🌐 Ready for enhanced hybrid AI-powered assessments with improved live data!")
+    print("🌐 Ready for enhanced hybrid AI-powered assessments with HONEST data reporting!")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
